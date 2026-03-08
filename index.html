@@ -59,7 +59,7 @@
             background: var(--text); color: white; font-weight: 800; cursor: pointer;
             margin-top: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: 0.3s;
         }
-        #mainBtn:hover { transform: translateY(-2px); }
+        #mainBtn:hover { transform: translateY(-2px); opacity: 0.9; }
 
         .toggle-link { font-size: 0.75rem; margin-top: 25px; cursor: pointer; color: var(--sub); font-weight: 600; }
     </style>
@@ -95,7 +95,7 @@
     </div>
 
     <script>
-        // CONFIGURATION AUTOMATIQUE (Tes clés)
+        // Ta config Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
             authDomain: "startgo-project.firebaseapp.com",
@@ -105,13 +105,15 @@
             appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
         };
 
+        // Initialisation
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
         let isSignup = false;
-        let selectedRole = 'athlete';
+        let currentRole = 'athlete'; // Variable pour stocker le rôle choisi
 
+        // Alterne entre Login et Sign-up
         function toggleMode() {
             isSignup = !isSignup;
             document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
@@ -119,446 +121,61 @@
             document.getElementById('toggle-btn').innerText = isSignup ? 'Déjà inscrit ? Connexion' : 'Nouveau ici ? Créer un compte';
         }
 
+        // Gère la sélection visuelle et logique du rôle
         function selectRole(role) {
-            selectedRole = role;
-            document.getElementById('opt-athlete').className = 'role-option' + (role === 'athlete' ? ' active' : '');
-            document.getElementById('opt-coach').className = 'role-option' + (role === 'coach' ? ' active' : '');
+            currentRole = role; 
+            document.getElementById('opt-athlete').classList.toggle('active', role === 'athlete');
+            document.getElementById('opt-coach').classList.toggle('active', role === 'coach');
         }
 
+        // Fonction principale d'authentification
         async function handleAuth() {
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const btn = document.getElementById('mainBtn');
+
+            if (!email || !password) {
+                alert("Veuillez remplir tous les champs.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Chargement...";
 
             try {
                 if (isSignup) {
-                    const name = document.getElementById('fullname').value;
+                    const name = document.getElementById('fullname').value.trim();
+                    if (!name) throw new Error("Le nom est obligatoire.");
+
+                    // 1. Création de l'utilisateur
                     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                     
-                    // Enregistrement du profil dans Firestore
+                    // 2. Création du profil dans Firestore
                     await db.collection('users').doc(userCredential.user.uid).set({
                         name: name,
-                        role: selectedRole,
+                        role: currentRole,
                         email: email,
-                        uid: userCredential.user.uid
+                        uid: userCredential.user.uid,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    alert("Compte " + selectedRole + " créé avec succès !");
+
+                    alert("Compte créé avec succès en tant que " + currentRole + " !");
                 } else {
+                    // Connexion simple
                     await auth.signInWithEmailAndPassword(email, password);
                     alert("Connexion réussie !");
                 }
-                
-                // Ici, on pourra rediriger vers le Dashboard plus tard
+
+                // Redirection (Optionnel : décommente la ligne suivante)
+                // window.location.href = "dashboard.html";
+
             } catch (error) {
                 alert("Erreur : " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = isSignup ? 'Créer le compte' : 'Se connecter';
             }
         }
-    </script>
-</body>
-</html>            font-weight: 600; font-family: inherit;
-        }
-
-        button {
-            width: 100%; padding: 18px; border-radius: 25px; border: none;
-            background: var(--text); color: white; font-weight: 800; cursor: pointer;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        button:active { transform: scale(0.95); }
-        .btn-accent { background: var(--accent); }
-
-        .label { font-size: 0.65rem; font-weight: 800; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; }
-
-        /* --- AUTH SECTION --- */
-        #auth-section { margin-top: 10vh; padding: 40px; width: 90%; max-width: 380px; text-align: center; }
-
-        /* --- ATHLETE VIEW (MOBILE) --- */
-        #athlete-view { display: none; width: 90%; max-width: 450px; padding: 20px 0; }
-        .hero { text-align: center; padding: 40px 20px; margin-bottom: 20px; position: relative; }
-        #time-display { font-size: 7.5rem; font-weight: 900; letter-spacing: -6px; line-height: 1; margin: 15px 0; }
-        
-        /* --- COACH VIEW (DESKTOP) --- */
-        #coach-view { display: none; width: 100vw; height: 100vh; grid-template-columns: 300px 1fr; }
-        .sidebar { background: rgba(255,255,255,0.3); backdrop-filter: blur(30px); padding: 35px; border-right: 1px solid var(--glass-stroke); display: flex; flex-direction: column; }
-        .main-coach { padding: 40px; overflow-y: auto; flex: 1; }
-        .athlete-card-btn { 
-            background: rgba(255,255,255,0.4); padding: 15px; border-radius: 20px; 
-            margin-bottom: 10px; text-align: left; cursor: pointer; border: 1px solid transparent;
-            font-weight: 700; transition: 0.2s;
-        }
-        .athlete-card-btn:hover { background: white; border-color: var(--accent); }
-
-        /* --- NOTIFICATION INTERNE --- */
-        .toast-notif {
-            position: fixed; bottom: 25px; right: 25px; background: white;
-            padding: 15px 25px; border-radius: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            border-left: 5px solid var(--accent); font-weight: 800; font-size: 0.85rem;
-            z-index: 10000; animation: slideIn 0.4s ease-out;
-        }
-
-        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
-
-        .session-log {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px; background: rgba(255,255,255,0.4); border-radius: 25px; margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="auth-section" class="glass-panel">
-        <h1 style="font-weight:900; letter-spacing:-2px;">STARTGO<span style="color:var(--accent)">.</span></h1>
-        
-        <div id="signup-fields" style="display:none;">
-            <input type="text" id="fullname" placeholder="Prénom Nom">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button id="btn-role-athlete" onclick="setRole('athlete')" style="background:#fff; color:#000; font-size:0.7rem; border:1px solid #ddd;">Athlète</button>
-                <button id="btn-role-coach" onclick="setRole('coach')" style="background:#fff; color:#000; font-size:0.7rem; border:1px solid #ddd;">Coach</button>
-            </div>
-        </div>
-
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="handleAuth()" id="main-auth-btn">Connexion</button>
-        <p onclick="toggleAuth()" id="toggle-text" style="font-size:0.75rem; cursor:pointer; color:var(--sub); margin-top:20px;">Pas de compte ? S'inscrire</p>
-    </div>
-
-    <div id="athlete-view">
-        <div id="pairing-panel" class="glass-panel" style="padding:25px; text-align:center; margin-bottom:20px;">
-            <span class="label">Lier un coach</span>
-            <input type="text" id="coach-code-input" placeholder="CODE" style="text-align:center; font-size:1.5rem; letter-spacing:4px;">
-            <button onclick="linkWithCoach()" class="btn-accent">REJOINDRE</button>
-        </div>
-
-        <div class="glass-panel hero">
-            <input type="text" id="run-name" value="Sprint Session" style="background:none; border:none; text-align:center; font-size:1.2rem; color:var(--sub);">
-            <div id="time-display">0.00</div>
-            <span class="label">secondes</span>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
-            <div class="glass-panel" style="padding:20px; text-align:center;">
-                <span class="label">Vitesse</span>
-                <div id="speed-display" style="font-size:1.8rem; font-weight:900;">0.0<small style="font-size:0.8rem">km/h</small></div>
-            </div>
-            <div class="glass-panel" style="padding:20px; text-align:center;">
-                <span class="label">Délai (s)</span>
-                <input type="range" id="wait-slider" min="1" max="10" value="3" style="margin-top:15px;">
-            </div>
-        </div>
-
-        <button id="actionBtn" onclick="startSequence()" style="padding:30px; font-size:1.2rem; letter-spacing:1px;">DÉMARRER</button>
-        <button onclick="simulateFinish()" style="margin-top:10px; background:#cbd5e1; color:#475569; font-size:0.7rem;">SIMULER FIN (CAPTEUR)</button>
-        <button onclick="logout()" style="background:none; color:var(--sub); font-size:0.7rem; margin-top:30px;">Déconnexion</button>
-    </div>
-
-    <div id="coach-view">
-        <aside class="sidebar">
-            <h2 style="font-weight:900;">STARTGO<span style="color:var(--accent)">.</span></h2>
-            <div class="label" style="margin-bottom:15px;">Athlètes connectés</div>
-            <div id="athletes-list-nav" style="flex:1"></div>
-            <button onclick="logout()" style="background:rgba(0,0,0,0.05); color:var(--text); font-size:0.8rem;">Déconnexion</button>
-        </aside>
-
-        <main class="main-coach">
-            <div class="glass-panel" style="padding:40px; margin-bottom:30px;">
-                <h1>Tableau de bord Coach</h1>
-                <p style="color:var(--sub);">Générez un code pour qu'un athlète puisse vous transmettre ses performances.</p>
-                <button onclick="createInviteCode()" class="btn-accent" style="width:auto; padding:15px 40px;">Générer un Code</button>
-                <div id="invite-code-display" style="display:none; margin-top:20px; font-size:3rem; font-weight:900; letter-spacing:8px; color:var(--accent);">----</div>
-            </div>
-
-            <div id="athlete-detail-view" style="display:none;">
-                <div class="glass-panel" style="padding:40px;">
-                    <h2 id="active-athlete-name" style="font-size:2rem; margin:0;">Nom de l'athlète</h2>
-                    <span class="label">Historique des performances</span>
-                    <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-                    <div id="athlete-sessions-logs"></div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        // CONFIGURATION FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
-            authDomain: "startgo-project.firebaseapp.com",
-            projectId: "startgo-project",
-            storageBucket: "startgo-project.firebasestorage.app",
-            messagingSenderId: "920233789220",
-            appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let isSignup = false;
-        let selectedRole = 'athlete';
-        let timer, startTime, state = "IDLE";
-
-        // --- AUTH LOGIQUE ---
-        function toggleAuth() {
-            isSignup = !isSignup;
-            document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('main-auth-btn').innerText = isSignup ? "Créer mon compte" : "Connexion";
-            document.getElementById('toggle-text').innerText = isSignup ? "Déjà un compte ? Se connecter" : "Pas de compte ? S'inscrire";
-        }
-
-        function setRole(r) {
-            selectedRole = r;
-            document.getElementById('btn-role-athlete').style.borderColor = r === 'athlete' ? 'var(--accent)' : '#ddd';
-            document.getElementById('btn-role-coach').style.borderColor = r === 'coach' ? 'var(--accent)' : '#ddd';
-        }
-
-        async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                if(isSignup) {
-                    const name = document.getElementById('fullname').value;
-                    const res = await auth.createUserWithEmailAndPassword(email, password);
-                    await db.collection('users').doc(res.user.uid).set({
-                        uid: res.user.uid, name, role: selectedRole, email, coachId: null
-                    });
-                } else {
-                    await auth.signInWithEmailAndPassword(email, password);
-                }
-            } catch(e) { alert(e.message); }
-        }
-
-        function logout() { auth.signOut().then(() => location.reload()); }
-
-        // --- GESTION DES ROLES AU DEMARRAGE ---
-        auth.onAuthStateChanged(async user => {
-            if(user) {
-                document.getElementById('auth-section').style.display = 'none';
-                const doc = await db.collection('users').doc(user.uid).get();
-                const uData = doc.data();
-
-                if(uData.role === 'coach') {
-                    document.getElementById('coach-view').style.display = 'grid';
-                    initCoachDashboard(user.uid);
-                } else {
-                    document.getElementById('athlete-view').style.display = 'block';
-                    if(uData.coachId) document.getElementById('pairing-panel').style.display = 'none';
-                }
-            }
-        });
-
-        // --- LOGIQUE COACH ---
-        function initCoachDashboard(coachId) {
-            // Liste des athlètes
-            db.collection('users').where('coachId', '==', coachId).onSnapshot(snap => {
-                const nav = document.getElementById('athletes-list-nav');
-                nav.innerHTML = "";
-                snap.forEach(doc => {
-                    const a = doc.data();
-                    const d = document.createElement('div');
-                    d.className = "athlete-card-btn";
-                    d.innerText = a.name;
-                    d.onclick = () => openAthleteDetails(a);
-                    nav.appendChild(d);
-                });
-            });
-
-            // Notifications Temps Réel (Sessions)
-            db.collection('sessions')
-              .where('coachId', '==', coachId)
-              .where('serverDate', '>', new Date()) // Nouveaux uniquement
-              .onSnapshot(snap => {
-                  snap.docChanges().forEach(change => {
-                      if (change.type === "added") {
-                          const s = change.doc.data();
-                          notify(`Nouveau Sprint : ${s.athleteName} - ${s.time}s`);
-                      }
-                  });
-              });
-        }
-
-        async function createInviteCode() {
-            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-            await db.collection('pairing_codes').doc(code).set({
-                coachId: auth.currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            document.getElementById('invite-code-display').innerText = code;
-            document.getElementById('invite-code-display').style.display = 'block';
-        }
-
-        function openAthleteDetails(athlete) {
-            document.getElementById('athlete-detail-view').style.display = 'block';
-            document.getElementById('active-athlete-name').innerText = athlete.name;
-            
-            db.collection('sessions')
-              .where('athleteId', '==', athlete.uid)
-              .orderBy('serverDate', 'desc')
-              .onSnapshot(snap => {
-                  const container = document.getElementById('athlete-sessions-logs');
-                  container.innerHTML = "";
-                  snap.forEach(doc => {
-                      const s = doc.data();
-                      container.innerHTML += `
-                        <div class="session-log">
-                            <div><b style="font-size:1.4rem;">${s.time}s</b><br><small class="label">${s.name}</small></div>
-                            <div style="text-align:right;"><span style="color:var(--accent); font-weight:800;">${s.speed} KM/H</span></div>
-                        </div>`;
-                  });
-              });
-        }
-
-        function notify(msg) {
-            const t = document.createElement('div');
-            t.className = "toast-notif";
-            t.innerText = msg;
-            document.body.appendChild(t);
-            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 600); }, 4000);
-        }
-
-        // --- LOGIQUE ATHLETE ---
-        async function linkWithCoach() {
-            const code = document.getElementById('coach-code-input').value.toUpperCase();
-            const ref = await db.collection('pairing_codes').doc(code).get();
-            if(ref.exists) {
-                await db.collection('users').doc(auth.currentUser.uid).update({ coachId: ref.data().coachId });
-                document.getElementById('pairing-panel').style.display = 'none';
-                alert("Liaison réussie !");
-            } else alert("Code erroné ou expiré.");
-        }
-
-        function startSequence() {
-            state = "WAITING";
-            document.getElementById('actionBtn').innerText = "ATTENTION...";
-            const wait = (parseInt(document.getElementById('wait-slider').value) * 1000) + (Math.random() * 10000);
-            
-            setTimeout(() => {
-                if(state !== "WAITING") return;
-                startTime = performance.now();
-                state = "RUNNING";
-                document.getElementById('actionBtn').innerText = "GO !";
-                timer = setInterval(() => {
-                    const now = (performance.now() - startTime) / 1000;
-                    document.getElementById('time-display').innerText = now.toFixed(2);
-                    document.getElementById('speed-display').innerHTML = ((10/now)*3.6).toFixed(1) + "<small>km/h</small>";
-                }, 40);
-            }, wait);
-        }
-
-        async function simulateFinish() {
-            if(state !== "RUNNING") return;
-            clearInterval(timer);
-            state = "IDLE";
-            document.getElementById('actionBtn').innerText = "DÉMARRER";
-
-            const user = auth.currentUser;
-            const uDoc = await db.collection('users').doc(user.uid).get();
-            const uData = uDoc.data();
-
-            const session = {
-                athleteId: user.uid,
-                athleteName: uData.name,
-                coachId: uData.coachId,
-                time: document.getElementById('time-display').innerText,
-                speed: document.getElementById('speed-display').innerText.replace('km/h', ''),
-                name: document.getElementById('run-name').value,
-                serverDate: new Date()
-            };
-
-            if(session.coachId) {
-                await db.collection('sessions').add(session);
-                alert("Temps transmis au coach !");
-            }
-        }
-    </script>
-</body>
-</html>
-<label>Nom complet</label>
-                <input type="text" id="fullname" placeholder="Ex: Marc Kevin">
-            </div>
-            <div class="role-selector">
-                <div class="role-option active" id="opt-athlete" onclick="selectRole('athlete')">ATHLÈTE</div>
-                <div class="role-option" id="opt-coach" onclick="selectRole('coach')">COACH</div>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Email</label>
-            <input type="email" id="email" placeholder="coach@startgo.com">
-        </div>
-        
-        <div class="input-group">
-            <label>Mot de passe</label>
-            <input type="password" id="password" placeholder="••••••••">
-        </div>
-
-        <button id="mainBtn" onclick="handleAuth()">Se connecter</button>
-        <div class="toggle-link" id="toggle-btn" onclick="toggleMode()" style="font-size: 0.75rem; margin-top: 25px; cursor: pointer; color: var(--sub);">Nouveau ici ? Créer un compte</div>
-    </div>
-
-    <div id="dashboard-section" class="auth-card">
-        <div class="welcome-box">
-            <h1 id="user-name">...</h1>
-            <p id="user-role" style="text-transform: uppercase; color: var(--accent); font-weight: 800;"></p>
-            <button onclick="auth.signOut().then(() => location.reload())" style="background: #eee; color: #333; margin-top: 20px;">Déconnexion</button>
-        </div>
-    </div>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
-            authDomain: "startgo-project.firebaseapp.com",
-            projectId: "startgo-project",
-            storageBucket: "startgo-project.firebasestorage.app",
-            messagingSenderId: "920233789220",
-            appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let isSignup = false;
-        let selectedRole = 'athlete';
-
-        function toggleMode() {
-            isSignup = !isSignup;
-            document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('mainBtn').innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            document.getElementById('toggle-btn').innerText = isSignup ? 'Déjà inscrit ? Connexion' : 'Nouveau ici ? Créer un compte';
-        }
-
-        function selectRole(role) {
-            selectedRole = role;
-            document.getElementById('opt-athlete').className = 'role-option' + (role === 'athlete' ? ' active' : '');
-            document.getElementById('opt-coach').className = 'role-option' + (role === 'coach' ? ' active' : '');
-        }
-
-        async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                if (isSignup) {
-                    const name = document.getElementById('fullname').value;
-                    const res = await auth.createUserWithEmailAndPassword(email, password);
-                    await db.collection('users').doc(res.user.uid).set({ name, role: selectedRole, email, uid: res.user.uid });
-                } else {
-                    await auth.signInWithEmailAndPassword(email, password);
-                }
-            } catch (e) { alert(e.message); }
-        }
-
-        // --- GESTION DE LA REDIRECTION AUTOMATIQUE ---
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const doc = await db.collection('users').doc(user.uid).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('auth-ui').style.display = 'none';
-                    document.getElementById('dashboard-section').style.display = 'block';
-                    document.getElementById('user-name').innerText = "Salut, " + data.name;
-                    document.getElementById('user-role').innerText = data.role;
-                }
-            }
-        });
     </script>
 </body>
 </html>
