@@ -3,38 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrono Pure</title>
+    <title>Chrono Sport WiFi</title>
     <style>
-        :root {
-            --bg: #ffffff; --text: #1e293b; --sub: #94a3b8;
-            --card: #f8fafc; --accent: #000000; --border: #e2e8f0;
+        :root { --primary: #6366f1; --bg: #f8fafc; --dark: #1e293b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        
+        .card { background: white; width: 100%; max-width: 380px; border-radius: 30px; padding: 25px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 15px; background: #e2e8f0; color: #64748b; }
+        
+        .timer-display { font-size: 4.5rem; font-weight: 800; color: var(--dark); margin: 10px 0; font-variant-numeric: tabular-nums; }
+        .unit { font-size: 1.2rem; color: #94a3b8; margin-left: 5px; }
+        
+        .stats { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; }
+        .stat-item { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
+        .stat-label { font-size: 0.7rem; color: #94a3b8; display: block; }
+
+        button { width: 100%; padding: 20px; border-radius: 20px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 1.2rem; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        /* Console de Test (Simulateur ESP32) */
+        .test-panel { width: 100%; max-width: 380px; background: #334155; border-radius: 20px; padding: 15px; color: white; }
+        .test-title { font-size: 0.8rem; font-weight: bold; color: #94a3b8; margin-bottom: 10px; display: block; }
+        .test-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-sm { padding: 10px; font-size: 0.8rem; background: #475569; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div id="status" class="badge">Prêt</div>
+        <div style="color:#94a3b8; font-size:0.8rem; font-weight:700;">CHRONOMÈTRE</div>
+        
+        <div class="timer-display">
+            <span id="time">0.000</span><span class="unit">s</span>
+        </div>
+
+        <div class="stats">
+            <div>
+                <span class="stat-label">RÉACTION</span>
+                <span id="react-val" class="stat-item">0.000s</span>
+            </div>
+            <div>
+                <span class="stat-label">VITESSE</span>
+                <span id="speed-val" class="stat-item">0.0 m/s</span>
+            </div>
+        </div>
+        
+        <br>
+        <button id="startBtn" onclick="prepareStart()">DÉMARRER</button>
+    </div>
+
+    <div class="test-panel">
+        <span class="test-title">TÉLÉCOMMANDE DE TEST (SIMULATION CAPTEURS)</span>
+        <div class="test-btns">
+            <button class="btn-sm" onclick="simulateTrigger('foot')">DÉCOLLAGE PIED</button>
+            <button class="btn-sm" onclick="simulateTrigger('finish')">ARRIVÉE</button>
+        </div>
+    </div>
+
+    <script>
+        let startTime, reactionTime, interval;
+        let state = "IDLE"; // IDLE, WAITING, RUNNING
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function beep(freq, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.start();
+            setTimeout(() => osc.stop(), duration);
         }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0f172a; --text: #f1f5f9; --sub: #64748b;
-                --card: #1e293b; --accent: #ffffff; --border: #334155;
+
+        function updateUI(status, color, btnText, btnDisabled) {
+            const s = document.getElementById('status');
+            s.innerText = status;
+            s.style.background = color;
+            s.style.color = (color === "#e2e8f0") ? "#64748b" : "white";
+            document.getElementById('startBtn').innerText = btnText;
+            document.getElementById('startBtn').disabled = btnDisabled;
+        }
+
+        function prepareStart() {
+            state = "WAITING";
+            updateUI("ATTENTION...", "#f59e0b", "EN ATTENTE", true);
+            
+            // Délai aléatoire entre 1.5s et 4s pour le BIP
+            const delay = 1500 + Math.random() * 2500;
+            setTimeout(() => {
+                if(state === "WAITING") {
+                    beep(880, 500); // Bip de départ
+                    startTime = performance.now();
+                    state = "RUNNING";
+                    updateUI("PARTEZ !", "#10b981", "COURSE EN COURS", true);
+                    startTimer();
+                }
+            }, delay);
+        }
+
+        function startTimer() {
+            interval = setInterval(() => {
+                const now = (performance.now() - startTime) / 1000;
+                document.getElementById('time').innerText = now.toFixed(3);
+            }, 10);
+        }
+
+        function simulateTrigger(type) {
+            if (state === "RUNNING" && type === "foot") {
+                reactionTime = (performance.now() - startTime) / 1000;
+                document.getElementById('react-val').innerText = reactionTime.toFixed(3) + "s";
+                beep(440, 100); // Petit bip de confirmation
+            } 
+            else if (state === "RUNNING" && type === "finish") {
+                clearInterval(interval);
+                const finalTime = (performance.now() - startTime) / 1000;
+                document.getElementById('time').innerText = finalTime.toFixed(3);
+                
+                // Calcul vitesse fictive (ex: sur 10 mètres)
+                const speed = (10 / finalTime).toFixed(1);
+                document.getElementById('speed-val').innerText = speed + " m/s";
+                
+                state = "IDLE";
+                updateUI("TERMINÉ", "#6366f1", "RECOMMANDER", false);
+                beep(600, 300);
             }
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-            background: var(--bg); color: var(--text);
-            display: flex; flex-direction: column; align-items: center;
-            margin: 0; min-height: 100vh; transition: 0.3s;
-        }
-
-        .container { width: 100%; max-width: 400px; padding: 40px 20px; box-sizing: border-box; }
-        
-        header { text-align: center; margin-bottom: 50px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--sub); margin-right: 6px; }
-        #status { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); }
-
-        .main-display { text-align: center; margin-bottom: 60px; }
-        #time { font-size: 5rem; font-weight: 200; letter-spacing: -2px; }
-        .unit { font-size: 1.5rem; font-weight: 400; color: var(--sub); margin-left: 5px; }
-
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; }
+    </script>
+</body>
+</html>        .stat-card { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; }
         .stat-label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--sub); margin-bottom: 5px; }
         .stat-val { font-weight: 600; font-size: 1.1rem; }
 
