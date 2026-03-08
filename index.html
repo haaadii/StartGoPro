@@ -3,38 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono Pure</title>
     <style>
         :root {
-            --bg: #f1f5f9; --card-bg: white; --text: #1e293b;
-            --sub-text: #64748b; --border: #e2e8f0; --primary: #6366f1;
+            --bg: #ffffff; --text: #1e293b; --sub: #94a3b8;
+            --card: #f8fafc; --accent: #000000; --border: #e2e8f0;
         }
-        [data-theme="dark"] {
-            --bg: #0f172a; --card-bg: #1e293b; --text: #f1f5f9;
-            --sub-text: #94a3b8; --border: #334155; --primary: #818cf8;
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a; --text: #f1f5f9; --sub: #64748b;
+                --card: #1e293b; --accent: #ffffff; --border: #334155;
+            }
         }
 
-        body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; color: var(--text); transition: 0.3s; }
-        
-        /* Sélecteur de thème */
-        .theme-switch { margin-bottom: 20px; background: var(--card-bg); padding: 5px; border-radius: 12px; border: 1px solid var(--border); }
-        .theme-switch button { width: auto; padding: 8px 12px; font-size: 0.7rem; background: transparent; color: var(--sub-text); border-radius: 8px; }
-        .theme-switch button.active { background: var(--primary); color: white; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+            background: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; align-items: center;
+            margin: 0; min-height: 100vh; transition: 0.3s;
+        }
 
-        .card { background: var(--card-bg); width: 100%; max-width: 350px; border-radius: 25px; padding: 30px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .container { width: 100%; max-width: 400px; padding: 40px 20px; box-sizing: border-box; }
         
-        .badge { display: inline-block; padding: 8px 18px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; margin-bottom: 20px; transition: 0.3s; background: #e2e8f0; color: #475569; }
-        
-        .val { font-size: 4rem; font-weight: 800; color: var(--text); margin: 10px 0; }
-        .unit { font-size: 1.5rem; color: var(--sub-text); }
-        .speed { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-top: 15px; }
-        
-        button { width: 100%; padding: 18px; border-radius: 18px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        header { text-align: center; margin-bottom: 50px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--sub); margin-right: 6px; }
+        #status { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); }
 
-        /* Télécommande de test */
-        .remote { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; width: 100%; max-width: 350px; }
-        .remote button { padding: 12px; font-size: 0.8rem; background: var(--sub-text); opacity: 0.7; }
+        .main-display { text-align: center; margin-bottom: 60px; }
+        #time { font-size: 5rem; font-weight: 200; letter-spacing: -2px; }
+        .unit { font-size: 1.5rem; font-weight: 400; color: var(--sub); margin-left: 5px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; }
+        .stat-label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--sub); margin-bottom: 5px; }
+        .stat-val { font-weight: 600; font-size: 1.1rem; }
+
+        button { 
+            width: 100%; padding: 22px; border-radius: 25px; border: none; 
+            background: var(--accent); color: var(--bg); 
+            font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s;
+        }
+        button:active { transform: scale(0.96); opacity: 0.8; }
+
+        /* Simulation Panel */
+        .remote { margin-top: 40px; display: flex; gap: 10px; opacity: 0.5; transition: 0.3s; }
+        .remote:hover { opacity: 1; }
+        .btn-test { padding: 10px; font-size: 0.7rem; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; flex: 1; }
+
+        /* History */
+        .history { margin-top: 50px; width: 100%; border-top: 1px solid var(--border); padding-top: 20px; }
+        .history-title { font-size: 0.8rem; font-weight: 700; color: var(--sub); margin-bottom: 15px; display: block; }
+        .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <span id="dot" class="status-dot"></span>
+            <span id="status">En attente</span>
+        </header>
+
+        <div class="main-display">
+            <span id="time">0.000</span><span class="unit">s</span>
+        </div>
+
+        <div class="grid">
+            <div class="stat-card">
+                <span class="stat-label">RÉACTION</span>
+                <span id="react-val" class="stat-val">--</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">VITESSE</span>
+                <span id="speed-val" class="stat-val">--</span>
+            </div>
+        </div>
+
+        <button id="mainBtn" onclick="runSession()">LANCER</button>
+
+        <div class="remote">
+            <button class="btn-test" onclick="trigger('foot')">DÉCOLLAGE</button>
+            <button class="btn-test" onclick="trigger('finish')">ARRIVÉE</button>
+        </div>
+
+        <div class="history">
+            <span class="history-title">HISTORIQUE</span>
+            <div id="history-list"></div>
+        </div>
+    </div>
+
+    <script>
+        let startTime, reactionTime, interval;
+        let state = "IDLE";
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+
+        function beep(f, d) {
+            const o = audio.createOscillator(); const g = audio.createGain();
+            o.connect(g); g.connect(audio.destination);
+            o.frequency.value = f; o.start(); setTimeout(() => o.stop(), d);
+        }
+
+        function runSession() {
+            state = "WAITING";
+            document.getElementById('status').innerText = "Attention...";
+            document.getElementById('dot').style.background = "#f59e0b";
+            document.getElementById('mainBtn').disabled = true;
+
+            setTimeout(() => {
+                if(state !== "WAITING") return;
+                beep(1000, 400);
+                startTime = performance.now();
+                state = "RUNNING";
+                document.getElementById('status').innerText = "En cours";
+                document.getElementById('dot').style.background = "#10b981";
+                interval = setInterval(() => {
+                    document.getElementById('time').innerText = ((performance.now()-startTime)/1000).toFixed(3);
+                }, 10);
+            }, 1500 + Math.random() * 2000);
+        }
+
+        function trigger(type) {
+            if(state !== "RUNNING") return;
+            if(type === 'foot') {
+                reactionTime = (performance.now() - startTime) / 1000;
+                document.getElementById('react-val').innerText = reactionTime.toFixed(3) + "s";
+                beep(500, 50);
+            } else {
+                clearInterval(interval);
+                const total = ((performance.now() - startTime) / 1000).toFixed(3);
+                const speed = (10 / total).toFixed(1);
+                document.getElementById('speed-val').innerText = speed + " m/s";
+                saveHistory(total, speed);
+                reset();
+            }
+        }
+
+        function reset() {
+            state = "IDLE";
+            document.getElementById('status').innerText = "Prêt";
+            document.getElementById('dot').style.background = "#94a3b8";
+            document.getElementById('mainBtn').disabled = false;
+        }
+
+        function saveHistory(t, s) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>Temps : <b>${t}s</b></span> <span style="color:var(--sub)">${s} m/s</span>`;
+            const list = document.getElementById('history-list');
+            list.prepend(item);
+            if(list.children.length > 5) list.lastChild.remove();
+        }
+    </script>
+</body>
+</html>        .remote button { padding: 12px; font-size: 0.8rem; background: var(--sub-text); opacity: 0.7; }
 
         /* Historique */
         .history { width: 100%; max-width: 350px; margin-top: 30px; text-align: left; }
