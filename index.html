@@ -3,38 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>StartGo Pro - Ultimate</title>
+    <title>StartGo Pro</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --bg: #f8fafc; --panel: #ffffff; --stroke: #e2e8f0; --text: #0f172a; --sub: #64748b; --accent: #ff4757; --nav-bg: #0f172a; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
-        
-        .header { background: var(--panel); padding: 15px 20px; border-bottom: 1px solid var(--stroke); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
-        
-        /* CARDS & UI */
-        .card { background: var(--panel); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--stroke); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        input, select { background: #f1f5f9; border: 1px solid var(--stroke); padding: 14px; border-radius: 12px; width: 100%; margin-bottom: 12px; box-sizing: border-box; font-size: 1rem; color: var(--text); }
-        button { background: var(--text); color: white; padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
-        .btn-accent { background: var(--accent); }
-        .btn-ghost { background: #f1f5f9; color: var(--text); margin-top: 5px; }
+        :root {
+            --bg: #f8fafc; --txt: #0f172a; --bloque: #ffffff; --brdr: #e2e8f0;
+            --ath: #007aff; --coa: #34c759; --adm: #ff4757; --react: #f1c40f;
+        }
+        .dark-mode {
+            --bg: #0b0f1a; --txt: #f1f5f9; --bloque: #1e293b; --brdr: #334155;
+        }
 
-        /* MESSAGERIE OPTIMISÉE */
-        .search-box { position: sticky; top: 0; background: var(--bg); padding-bottom: 10px; z-index: 5; }
-        .msg-list-item { display: flex; align-items: center; padding: 12px; border-radius: 15px; cursor: pointer; margin-bottom: 5px; transition: 0.2s; }
-        .msg-list-item:hover { background: white; }
-        .msg-avatar { width: 55px; height: 55px; border-radius: 50%; margin-right: 15px; background: linear-gradient(45deg, #e2e8f0, #cbd5e1); border: 2px solid white; }
-        .msg-info { flex: 1; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-        .msg-name { font-weight: 700; font-size: 1.05rem; }
-        .msg-status { color: var(--sub); font-size: 0.85rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; transition: background 0.2s; }
+        body { background: var(--bg); color: var(--txt); height: 100vh; overflow: hidden; }
+        
+        /* --- DESIGN BLOQUE --- */
+        .bloque { background: var(--bloque); border: 1px solid var(--brdr); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .input-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--brdr); background: var(--bg); color: var(--txt); margin-top: 8px; }
+        
+        /* --- NAVIGATION --- */
+        #app-shell { display: flex; height: 100vh; }
+        .sidebar { width: 280px; border-right: 1px solid var(--brdr); padding: 30px; display: flex; flex-direction: column; background: var(--bloque); }
+        .main-view { flex: 1; padding: 30px; overflow-y: auto; }
+        .nav-bot { display: none; position: fixed; bottom: 0; width: 100%; height: 75px; background: var(--bloque); border-top: 1px solid var(--brdr); justify-content: space-around; align-items: center; z-index: 1000; }
 
-        /* CHAT WINDOW */
-        #chat-window { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; display: none; flex-direction: column; }
-        .chat-header { background: white; padding: 15px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; gap: 15px; }
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { padding: 12px 16px; border-radius: 20px; max-width: 75%; font-size: 0.95rem; line-height: 1.4; position: relative; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .nav-bot { display: flex; }
+            .main-view { padding: 20px 20px 100px 20px; }
+        }
+
+        .nav-item { padding: 12px 20px; cursor: pointer; border-radius: 12px; margin-bottom: 8px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover { background: rgba(0,0,0,0.05); }
+
+        /* --- CHRONO --- */
+        .timer-yellow { color: var(--react); font-size: 2.5rem; font-weight: 800; }
+        .timer-main { font-size: 4.5rem; font-weight: 900; }
+        .starting-btn { background: var(--txt); color: var(--bg); width: 100%; padding: 20px; border-radius: 15px; border: none; font-weight: 800; cursor: pointer; }
+
+        /* --- ROLES --- */
+        .u-athlete { color: var(--ath); font-weight: bold; }
+        .u-coach { color: var(--coa); font-weight: bold; }
+        .u-admin { color: var(--adm); font-weight: bold; }
+    </style>
+</head>
+<body class="light-mode">
+
+    <div id="auth-box" style="display:flex; height:100vh; align-items:center; justify-content:center;">
+        <div class="bloque" style="width:360px;">
+            <h1 style="text-align:center; margin-bottom:20px;">STARTGO<span>.</span></h1>
+            <input type="text" id="l-user" placeholder="Email ou Pseudo" class="input-box">
+            <input type="password" id="l-pass" placeholder="Mot de passe" class="input-box">
+            <button class="starting-btn" style="margin-top:20px;" onclick="handleLogin()">CONNEXION</button>
+        </div>
+    </div>
+
+    <div id="app-shell" style="display:none;">
+        <aside class="sidebar">
+            <h2 style="margin-bottom:40px;">STARTGO<span>.</span></h2>
+            <div id="nav-desktop"></div>
+        </aside>
+
+        <main class="main-view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <h2 id="view-title">Dashboard</h2>
+                <div id="user-badge" style="font-size: 1.1rem;"></div>
+            </div>
+            <div id="active-content"></div>
+        </main>
+
+        <nav class="nav-bot" id="nav-mobile"></nav>
+    </div>
+
+    <script>
+        const cfg = { apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU", authDomain: "startgo-project.firebaseapp.com", projectId: "startgo-project", storageBucket: "startgo-project.firebasestorage.app", messagingSenderId: "920233789220", appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1" };
+        firebase.initializeApp(cfg);
+        const auth = firebase.auth(), db = firebase.firestore();
+
+        let uData = null;
+        let cState = 'IDLE', tRef, tReact;
+
+        auth.onAuthStateChanged(async (u) => {
+            if(u) {
+                const s = await db.collection('users').doc(u.uid).get();
+                uData = s.data();
+                if(!uData) return auth.signOut();
+                initApp();
+            } else {
+                document.getElementById('auth-box').style.display = 'flex';
+                document.getElementById('app-shell').style.display = 'none';
+            }
+        });
+
+        function initApp() {
+            document.getElementById('auth-box').style.display = 'none';
+            document.getElementById('app-shell').style.display = 'flex';
+            setupNav();
+            go('P1');
+        }
+
+        function setupNav() {
+            const menu = {
+                athlete: [{id:'P1', n:'Entraînement', i:'⏱️'}, {id:'P2', n:'Messages', i:'💬'}, {id:'P3', n:'Historique', i:'📜'}, {id:'P4', n:'Liaison', i:'🔗'}, {id:'P5', n:'Paramètres', i:'⚙️'}],
+                coach: [{id:'P1', n:'Athlètes', i:'👥'}, {id:'P2', n:'Messages', i:'💬'}, {id:'P3', n:'Liaison', i:'🔑'}, {id:'P4', n:'Paramètres', i:'⚙️'}],
+                admin: [{id:'P1', n:'Utilisateurs', i:'🛡️'}, {id:'P2', n:'Messages', i:'💬'}, {id:'P3', n:'Logs', i:'📑'}, {id:'P4', n:'Paramètres', i:'⚙️'}]
+            }[uData.role];
+
+            const d = document.getElementById('nav-desktop'), m = document.getElementById('nav-mobile');
+            d.innerHTML = ''; m.innerHTML = '';
+            menu.forEach(t => {
+                d.innerHTML += `<div class="nav-item" onclick="go('${t.id}')"><span>${t.i}</span> ${t.n}</div>`;
+                m.innerHTML += `<div onclick="go('${t.id}')" style="font-size:1.6rem;">${t.i}</div>`;
+            });
+
+            const badge = document.getElementById('user-badge');
+            let color = uData.role === 'athlete' ? 'u-athlete' : (uData.role === 'coach' ? 'u-coach' : 'u-admin');
+            let label = uData.role === 'athlete' ? '' : (uData.role === 'coach' ? ' coach' : ' admine');
+            badge.innerHTML = `<span class="${color}">${uData.name}</span>${label}`;
+        }
+
+        function go(id) {
+            const v = document.getElementById('active-content');
+            v.innerHTML = '';
+            if(uData.role === 'athlete') {
+                if(id === 'P1') renderAthleteTraining(v);
+                if(id === 'P5') renderSettings(v);
+            }
+            if(uData.role === 'admin' && id === 'P1') renderAdminList(v);
+        }
+
+        // --- ATHLETE : ENTRAINEMENT ---
+        function renderAthleteTraining(v) {
+            v.innerHTML = `
+                <div class="bloque">
+                    <button class="starting-btn" id="main-btn" onclick="startSequence()">LANCER STARTINGBLOCK</button>
+                </div>
+                <div class="bloque">
+                    <label>Temps avant bip (1-10s)</label>
+                    <input type="number" id="cfg-wait" class="input-box" value="3" min="1" max="10">
+                </div>
+                <div class="bloque">
+                    <label>Distance (5-500m)</label>
+                    <input type="number" id="cfg-dist" class="input-box" value="60" min="5" max="500">
+                </div>
+                <div class="bloque" style="text-align:center; min-height:200px; display:flex; flex-direction:column; justify-content:center;">
+                    <div id="chrono-yellow" class="timer-yellow"></div>
+                    <div id="chrono-main" class="timer-main">0.00</div>
+                    <div id="chrono-feedback" style="font-weight:bold; margin-top:10px;"></div>
+                </div>
+            `;
+        }
+
+        function startSequence() {
+            const btn = document.getElementById('main-btn');
+            const wait = parseInt(document.getElementById('cfg-wait').value) * 1000;
+            const rand = Math.floor(Math.random() * 9000) + 1000;
+            
+            btn.disabled = true;
+            btn.innerText = "PRÉPARATION...";
+            cState = 'WAIT';
+
+            window.bipAction = setTimeout(() => {
+                cState = 'READY';
+                tRef = performance.now();
+                document.getElementById('chrono-feedback').innerText = "BIP !";
+                playBip();
+                runChrono();
+            }, wait + rand);
+            
+            // Détection du décollage (pour cet exemple, clic sur le bloc chrono)
+            document.querySelector('.timer-main').parentElement.onmousedown = handleStep;
+        }
+
+        function handleStep() {
+            if(cState === 'WAIT') {
+                clearTimeout(window.bipAction);
+                alert("FAUX DÉPART !");
+                resetChrono();
+            } else if(cState === 'READY') {
+                tReact = (performance.now() - tRef) / 1000;
+                cState = 'RUN';
+                tRef = performance.now();
+                document.getElementById('chrono-yellow').innerText = tReact.toFixed(3);
+                document.getElementById('chrono-feedback').innerText = "COURSE...";
+            } else if(cState === 'RUN') {
+                const final = (performance.now() - tRef) / 1000;
+                cState = 'IDLE';
+                document.getElementById('chrono-main').innerText = final.toFixed(2);
+                document.getElementById('chrono-feedback').innerText = "TERMINÉ";
+                saveSession(tReact, final);
+            }
+        }
+
+        function runChrono() {
+            if(cState !== 'READY' && cState !== 'RUN') return;
+            const val = ((performance.now() - tRef) / 1000).toFixed(2);
+            document.getElementById('chrono-main').innerText = val;
+            requestAnimationFrame(runChrono);
+        }
+
+        function resetChrono() {
+            cState = 'IDLE';
+            document.getElementById('main-btn').disabled = false;
+            document.getElementById('main-btn').innerText = "LANCER STARTINGBLOCK";
+        }
+
+        // --- PARAMETRES ---
+        function renderSettings(v) {
+            v.innerHTML = `
+                <div class="bloque">
+                    <h3>Profil</h3>
+                    <input type="text" id="p-name" class="input-box" value="${uData.name}">
+                    <input type="number" id="p-weight" class="input-box" placeholder="Poids (kg)" value="${uData.weight||''}">
+                    <input type="number" id="p-height" class="input-box" placeholder="Taille (cm)" value="${uData.height||''}">
+                </div>
+                <div class="bloque">
+                    <button class="input-box" onclick="toggleTheme()">Mode Clair / Sombre</button>
+                    <button class="input-box" style="color:red;" onclick="deleteAcc()">Supprimer mon compte</button>
+                    <button class="input-box" onclick="auth.signOut()">Déconnexion</button>
+                </div>
+            `;
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function playBip() {
+            const a = new AudioContext(); const o = a.createOscillator();
+            o.type="sine"; o.frequency.setValueAtTime(800, a.currentTime);
+            o.connect(a.destination); o.start(); o.stop(a.currentTime+0.1);
+        }
+
+        async function handleLogin() {
+            const id = document.getElementById('l-user').value;
+            const pw = document.getElementById('l-pass').value;
+            try { await auth.signInWithEmailAndPassword(id, pw); } catch(e) { alert(e.message); }
+        }
+    </script>
+</body>
+</html>             .bubble { padding: 12px 16px; border-radius: 20px; max-width: 75%; font-size: 0.95rem; line-height: 1.4; position: relative; }
         .bubble.me { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; }
         .bubble.them { align-self: flex-start; background: white; color: var(--text); border: 1px solid var(--stroke); border-bottom-left-radius: 4px; }
         .chat-input-area { background: white; padding: 15px; border-top: 1px solid var(--stroke); display: flex; gap: 10px; }
