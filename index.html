@@ -3,1138 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StartGo - Login & Setup</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    
+    <title>Chrono Precision</title>
     <style>
         :root {
-            --bg: #f0f2f5;
-            --glass: rgba(255, 255, 255, 0.6);
-            --text: #1e293b;
-            --accent: #ff4757;
-            --sub: #64748b;
+            --bg: #ffffff;
+            --surface: #f4f4f5;
+            --text: #09090b;
+            --sub: #71717a;
+            --accent: #ef4444; /* Rouge Sport */
+            --glass: rgba(255, 255, 255, 0.8);
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%);
-            height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
             color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
 
-        .auth-card {
-            background: var(--glass);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255,255,255,0.7);
-            padding: 40px; border-radius: 40px; width: 90%; max-width: 380px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.05); text-align: center;
-        }
-
-        h2 { font-weight: 900; letter-spacing: -1.5px; font-size: 1.8rem; margin-bottom: 30px; }
-        
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { font-size: 0.65rem; font-weight: 800; color: var(--sub); text-transform: uppercase; margin-left: 15px; }
-        
-        input {
-            width: 100%; padding: 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.8);
-            background: rgba(255,255,255,0.5); margin-top: 5px; outline: none; box-sizing: border-box;
-            font-weight: 600; transition: 0.3s;
-        }
-        input:focus { border-color: var(--accent); background: white; }
-
-        .role-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
-        
-        .role-option {
-            padding: 15px; border-radius: 20px; background: rgba(255,255,255,0.4);
-            border: 2px solid transparent; cursor: pointer; font-weight: 800; font-size: 0.8rem;
-            transition: 0.3s; color: var(--sub);
-        }
-        .role-option.active { border-color: var(--accent); color: var(--accent); background: white; }
-
-        #mainBtn {
-            width: 100%; padding: 20px; border-radius: 25px; border: none;
-            background: var(--text); color: white; font-weight: 800; cursor: pointer;
-            margin-top: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: 0.3s;
-        }
-        #mainBtn:hover { transform: translateY(-2px); opacity: 0.9; }
-
-        .toggle-link { font-size: 0.75rem; margin-top: 25px; cursor: pointer; color: var(--sub); font-weight: 600; }
-    </style>
-</head>
-<body>
-
-    <div class="auth-card">
-        <h2>STARTGO<span style="color:var(--accent)">.</span></h2>
-        
-        <div id="signup-fields" style="display: none;">
-            <div class="input-group">
-                <label>Nom complet</label>
-                <input type="text" id="fullname" placeholder="Ex: Marc Kevin">
-            </div>
-            <div class="role-selector">
-                <div class="role-option active" id="opt-athlete" onclick="selectRole('athlete')">ATHLÈTE</div>
-                <div class="role-option" id="opt-coach" onclick="selectRole('coach')">COACH</div>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Email</label>
-            <input type="email" id="email" placeholder="coach@startgo.com">
-        </div>
-        
-        <div class="input-group">
-            <label>Mot de passe</label>
-            <input type="password" id="password" placeholder="••••••••">
-        </div>
-
-        <button id="mainBtn" onclick="handleAuth()">Se connecter</button>
-        <div class="toggle-link" id="toggle-btn" onclick="toggleMode()">Nouveau ici ? Créer un compte</div>
-    </div>
-
-    <script>
-        // Ta config Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
-            authDomain: "startgo-project.firebaseapp.com",
-            projectId: "startgo-project",
-            storageBucket: "startgo-project.firebasestorage.app",
-            messagingSenderId: "920233789220",
-            appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
-        };
-
-        // Initialisation
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let isSignup = false;
-        let currentRole = 'athlete'; // Variable pour stocker le rôle choisi
-
-        // Alterne entre Login et Sign-up
-        function toggleMode() {
-            isSignup = !isSignup;
-            document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('mainBtn').innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            document.getElementById('toggle-btn').innerText = isSignup ? 'Déjà inscrit ? Connexion' : 'Nouveau ici ? Créer un compte';
-        }
-
-        // Gère la sélection visuelle et logique du rôle
-        function selectRole(role) {
-            currentRole = role; 
-            document.getElementById('opt-athlete').classList.toggle('active', role === 'athlete');
-            document.getElementById('opt-coach').classList.toggle('active', role === 'coach');
-        }
-
-        // Fonction principale d'authentification
-        async function handleAuth() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('mainBtn');
-
-            if (!email || !password) {
-                alert("Veuillez remplir tous les champs.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Chargement...";
-
-            try {
-                if (isSignup) {
-                    const name = document.getElementById('fullname').value.trim();
-                    if (!name) throw new Error("Le nom est obligatoire.");
-
-                    // 1. Création de l'utilisateur
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    
-                    // 2. Création du profil dans Firestore
-                    await db.collection('users').doc(userCredential.user.uid).set({
-                        name: name,
-                        role: currentRole,
-                        email: email,
-                        uid: userCredential.user.uid,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    alert("Compte créé avec succès en tant que " + currentRole + " !");
-                } else {
-                    // Connexion simple
-                    await auth.signInWithEmailAndPassword(email, password);
-                    alert("Connexion réussie !");
-                }
-
-                // Redirection (Optionnel : décommente la ligne suivante)
-                // window.location.href = "dashboard.html";
-
-            } catch (error) {
-                alert("Erreur : " + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            }
-        }
-    </script>
-</body>
-</html>        .stat-card { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; }
-        .stat-label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--sub); margin-bottom: 5px; }
-        .stat-val { font-weight: 600; font-size: 1.1rem; }
-
-        button { 
-            width: 100%; padding: 22px; border-radius: 25px; border: none; 
-            background: var(--accent); color: var(--bg); 
-            font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s;
-        }
-        button:active { transform: scale(0.96); opacity: 0.8; }
-
-        /* Simulation Panel */
-        .remote { margin-top: 40px; display: flex; gap: 10px; opacity: 0.5; transition: 0.3s; }
-        .remote:hover { opacity: 1; }
-        .btn-test { padding: 10px; font-size: 0.7rem; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; flex: 1; }
-
-        /* History */
-        .history { margin-top: 50px; width: 100%; border-top: 1px solid var(--border); padding-top: 20px; }
-        .history-title { font-size: 0.8rem; font-weight: 700; color: var(--sub); margin-bottom: 15px; display: block; }
-        .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <header>
-            <span id="dot" class="status-dot"></span>
-            <span id="status">En attente</span>
-        </header>
-
-        <div class="main-display">
-            <span id="time">0.000</span><span class="unit">s</span>
-        </div>
-
-        <div class="grid">
-            <div class="stat-card">
-                <span class="stat-label">RÉACTION</span>
-                <span id="react-val" class="stat-val">--</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">VITESSE</span>
-                <span id="speed-val" class="stat-val">--</span>
-            </div>
-        </div>
-
-        <button id="mainBtn" onclick="runSession()">LANCER</button>
-
-        <div class="remote">
-            <button class="btn-test" onclick="trigger('foot')">DÉCOLLAGE</button>
-            <button class="btn-test" onclick="trigger('finish')">ARRIVÉE</button>
-        </div>
-
-        <div class="history">
-            <span class="history-title">HISTORIQUE</span>
-            <div id="history-list"></div>
-        </div>
-    </div>
-
-    <script>
-        let startTime, reactionTime, interval;
-        let state = "IDLE";
-        const audio = new (window.AudioContext || window.webkitAudioContext)();
-
-        function beep(f, d) {
-            const o = audio.createOscillator(); const g = audio.createGain();
-            o.connect(g); g.connect(audio.destination);
-            o.frequency.value = f; o.start(); setTimeout(() => o.stop(), d);
-        }
-
-        function runSession() {
-            state = "WAITING";
-            document.getElementById('status').innerText = "Attention...";
-            document.getElementById('dot').style.background = "#f59e0b";
-            document.getElementById('mainBtn').disabled = true;
-
-            setTimeout(() => {
-                if(state !== "WAITING") return;
-                beep(1000, 400);
-                startTime = performance.now();
-                state = "RUNNING";
-                document.getElementById('status').innerText = "En cours";
-                document.getElementById('dot').style.background = "#10b981";
-                interval = setInterval(() => {
-                    document.getElementById('time').innerText = ((performance.now()-startTime)/1000).toFixed(3);
-                }, 10);
-            }, 1500 + Math.random() * 2000);
-        }
-
-        function trigger(type) {
-            if(state !== "RUNNING") return;
-            if(type === 'foot') {
-                reactionTime = (performance.now() - startTime) / 1000;
-                document.getElementById('react-val').innerText = reactionTime.toFixed(3) + "s";
-                beep(500, 50);
-            } else {
-                clearInterval(interval);
-                const total = ((performance.now() - startTime) / 1000).toFixed(3);
-                const speed = (10 / total).toFixed(1);
-                document.getElementById('speed-val').innerText = speed + " m/s";
-                saveHistory(total, speed);
-                reset();
-            }
-        }
-
-        function reset() {
-            state = "IDLE";
-            document.getElementById('status').innerText = "Prêt";
-            document.getElementById('dot').style.background = "#94a3b8";
-            document.getElementById('mainBtn').disabled = false;
-        }
-
-        function saveHistory(t, s) {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerHTML = `<span>Temps : <b>${t}s</b></span> <span style="color:var(--sub)">${s} m/s</span>`;
-            const list = document.getElementById('history-list');
-            list.prepend(item);
-            if(list.children.length > 5) list.lastChild.remove();
-        }
-    </script>
-</body>
-</html>        }
-
+        /* En-tête */
         header {
-            width: 90%; max-width: 450px;
-            padding: 20px; text-align: center; margin-bottom: 15px;
+            width: 100%;
+            max-width: 450px;
+            padding: 40px 24px 20px;
+            box-sizing: border-box;
         }
 
-        .hero {
-            width: 90%; max-width: 450px;
-            padding: 40px 20px; text-align: center; margin-bottom: 15px;
+        .label-mini {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--sub);
+        }
+
+        /* Section Chrono Principale */
+        .main-display {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px 24px;
+            box-sizing: border-box;
+            text-align: left;
         }
 
         #time {
-            font-size: 7.5rem; font-weight: 900; letter-spacing: -6px;
-            line-height: 1; margin: 10px 0; color: var(--text);
+            font-size: 8rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            line-height: 1;
+            margin: 10px 0;
         }
 
-        .stats-grid {
-            width: 90%; max-width: 450px;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;
+        /* Grille de données */
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background-color: #e4e4e7;
+            width: 100%;
+            border-top: 1px solid #e4e4e7;
+            border-bottom: 1px solid #e4e4e7;
         }
 
-        .stat-card { padding: 20px; text-align: center; }
-        .label { font-size: 0.65rem; font-weight: 800; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; }
+        .data-cell {
+            background-color: var(--bg);
+            padding: 24px;
+        }
 
+        .val-big {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        /* Contrôles */
         .controls {
-            width: 90%; max-width: 450px; padding: 25px; margin-bottom: 30px;
+            width: 100%;
+            max-width: 450px;
+            padding: 40px 24px;
+            box-sizing: border-box;
         }
 
-        input[type=range] { width: 100%; height: 6px; border-radius: 10px; appearance: none; background: rgba(0,0,0,0.1); outline: none; margin: 15px 0; }
-        input[type=range]::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; background: var(--text); border-radius: 50%; cursor: pointer; }
+        .slider-group {
+            margin-bottom: 30px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin-top: 15px;
+            accent-color: var(--text);
+        }
 
         #mainBtn {
-            width: 100%; padding: 22px; border-radius: 20px; border: none;
-            background: var(--text); color: white; font-weight: 800; font-size: 1rem;
-            cursor: pointer; transition: 0.3s;
+            width: 100%;
+            background-color: var(--text);
+            color: var(--bg);
+            border: none;
+            padding: 24px;
+            border-radius: 0; /* Design carré plus pro */
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: 0.2s;
         }
 
-        /* Historique éditable */
-        .history { width: 90%; max-width: 450px; }
-        .h-item {
-            background: rgba(255,255,255,0.4); border: 1px solid var(--glass-border);
-            padding: 15px 20px; border-radius: 20px; margin-bottom: 10px;
-            display: flex; justify-content: space-between; align-items: center;
+        #mainBtn:active {
+            background-color: var(--accent);
         }
 
-        .h-edit-name { 
-            border: none; background: transparent; font-weight: 800; 
-            font-size: 0.9rem; color: var(--text); width: 120px;
+        /* Historique épuré */
+        .history {
+            width: 100%;
+            max-width: 450px;
+            padding: 0 24px 40px;
+            box-sizing: border-box;
         }
 
-        .delete-btn {
-            background: none; border: none; color: var(--accent);
-            font-size: 1.2rem; cursor: pointer; padding: 0 5px;
+        .history-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 16px 0;
+            border-bottom: 1px solid #f4f4f5;
         }
 
-        .h-data { text-align: right; font-weight: 900; }
+        /* Mode Debug caché */
+        .debug-bar {
+            opacity: 0.1;
+            padding: 20px;
+        }
+
+        .btn-debug {
+            border: 1px solid var(--text);
+            background: none;
+            padding: 5px 10px;
+            font-size: 0.6rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <header class="glass-panel">
-        <div style="font-weight: 900; font-size: 1.2rem;">STARTGO<span style="color:var(--accent)">.</span></div>
+    <header>
+        <div id="status" class="label-mini">● Système Prêt</div>
     </header>
 
-    <main class="hero glass-panel">
-        <input type="text" id="sessionName" value="Course 1" style="background:none; border:none; text-align:center; font-weight:700; width:100%; outline:none;">
+    <main class="main-display">
+        <div class="label-mini">Temps écoulé (s)</div>
         <div id="time">0.00</div>
-        <div class="label">secondes</div>
     </main>
 
-    <div class="stats-grid">
-        <div class="stat-card glass-panel">
-            <span class="label">Réaction</span>
-            <div id="react" style="font-size: 1.5rem; font-weight: 800;">0.00</div>
+    <section class="data-grid">
+        <div class="data-cell">
+            <span class="label-mini">Vitesse</span>
+            <span id="speed" class="val-big">0.0 <small>km/h</small></span>
         </div>
-        <div class="stat-card glass-panel">
-            <span class="label">Vitesse</span>
-            <div id="speed" style="font-size: 1.5rem; font-weight: 800;">0.0</div>
+        <div class="data-cell">
+            <span class="label-mini">Réaction</span>
+            <span id="react" class="val-big">0.00 <small>s</small></span>
         </div>
-    </div>
-
-    <section class="controls glass-panel">
-        <div style="display:flex; justify-content:space-between;" class="label">
-            <span>Distance</span><span id="d-val">10m</span>
-        </div>
-        <input type="range" id="dist" min="5" max="100" value="10" oninput="document.getElementById('d-val').innerText=this.value+'m'">
-        <button id="mainBtn" onclick="run()">LANCER</button>
     </section>
 
-    <div class="history" id="history-list"></div>
-
-    <script>
-        let state = "IDLE", start, timer, logs = [];
-
-        window.onload = () => {
-            const saved = document.cookie.split('; ').find(r => r.startsWith('history='));
-            if (saved) {
-                logs = JSON.parse(decodeURIComponent(saved.split('=')[1]));
-                renderHistory();
-            }
-        };
-
-        function run() {
-            state = "WAITING";
-            document.getElementById('mainBtn').disabled = true;
-            document.getElementById('mainBtn').style.opacity = "0.3";
-            
-            setTimeout(() => {
-                start = performance.now();
-                state = "RUNNING";
-                timer = setInterval(() => {
-                    const now = (performance.now() - start) / 1000;
-                    document.getElementById('time').innerText = now.toFixed(2);
-                    const d = document.getElementById('dist').value;
-                    document.getElementById('speed').innerText = ((d/now)*3.6).toFixed(1);
-                }, 40);
-            }, 1000 + Math.random() * 3000);
-        }
-
-        function triggerFinish() { // Appelé par capteur ou simu
-            if(state !== "RUNNING") return;
-            clearInterval(timer);
-            const entry = {
-                id: Date.now(),
-                name: document.getElementById('sessionName').value,
-                time: document.getElementById('time').innerText,
-                speed: document.getElementById('speed').innerText
-            };
-            logs.unshift(entry);
-            save(); renderHistory();
-            state = "IDLE";
-            document.getElementById('mainBtn').disabled = false;
-            document.getElementById('mainBtn').style.opacity = "1";
-        }
-
-        function save() {
-            document.cookie = `history=${encodeURIComponent(JSON.stringify(logs.slice(0,20)))}; max-age=31536000; path=/`;
-        }
-
-        function editLog(id, newName) {
-            const log = logs.find(l => l.id === id);
-            if(log) log.name = newName;
-            save();
-        }
-
-        function deleteLog(id) {
-            logs = logs.filter(l => l.id !== id);
-            save(); renderHistory();
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('history-list');
-            list.innerHTML = '<div class="label" style="margin-bottom:10px; margin-left:10px;">Historique</div>';
-            logs.forEach(log => {
-                const div = document.createElement('div');
-                div.className = 'h-item';
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        <button class="delete-btn" onclick="deleteLog(${log.id})">×</button>
-                        <input type="text" class="h-edit-name" value="${log.name}" onchange="editLog(${log.id}, this.value)">
-                    </div>
-                    <div class="h-data">${log.time}s <br> <span style="font-size:0.7rem; color:var(--accent)">${log.speed} km/h</span></div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        // Pour le test : Espace = Fin
-        window.addEventListener('keydown', (e) => { if(e.code === "Space") triggerFinish(); });
-    </script>
-</body>
-</html>        #athlete-view { display: none; width: 90%; max-width: 450px; padding: 20px 0; }
-        #time-display { font-size: 7rem; font-weight: 900; letter-spacing: -5px; text-align: center; }
-
-        /* --- COACH VIEW --- */
-        #coach-view { display: none; width: 100vw; height: 100vh; grid-template-columns: 280px 1fr; }
-        .sidebar { background: rgba(255,255,255,0.3); padding: 30px; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        .main-coach { padding: 40px; overflow-y: auto; flex: 1; }
-        
-        .athlete-btn { 
-            width: 100%; padding: 15px; border-radius: 15px; border: none; background: rgba(255,255,255,0.5);
-            margin-bottom: 10px; cursor: pointer; text-align: left; font-weight: 700; transition: 0.2s;
-        }
-        .athlete-btn:hover { background: white; color: var(--accent); }
-
-        /* --- INPUTS & BUTTONS --- */
-        input, button { width: 100%; padding: 15px; border-radius: 20px; border: 1px solid #eee; margin-bottom: 10px; box-sizing: border-box; font-family: inherit; }
-        button { background: var(--text); color: white; font-weight: 800; cursor: pointer; border: none; }
-        .btn-accent { background: var(--accent); }
-        .label { font-size: 0.65rem; font-weight: 800; color: var(--sub); text-transform: uppercase; }
-
-        /* --- CHART CONTAINER --- */
-        .chart-container { width: 100%; height: 300px; margin-top: 20px; }
-
-        /* --- NOTIFS --- */
-        .toast { position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-left: 5px solid var(--accent); font-weight: 800; animation: slideIn 0.4s ease-out; }
-        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
-    </style>
-</head>
-<body>
-
-    <div id="auth-section" class="glass-panel">
-        <h1 style="font-weight:900;">STARTGO<span style="color:var(--accent)">.</span></h1>
-        <div id="signup-fields" style="display:none;">
-            <input type="text" id="fullname" placeholder="Prénom Nom">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <button onclick="selectedRole='athlete'" style="font-size:0.7rem; background:#fff; color:#333;">Athlète</button>
-                <button onclick="selectedRole='coach'" style="font-size:0.7rem; background:#fff; color:#333;">Coach</button>
+    <section class="controls">
+        <div class="slider-group">
+            <div style="display: flex; justify-content: space-between;">
+                <span class="label-mini">Distance</span>
+                <span class="label-mini" style="color: var(--text)"><span id="d-val">10</span> m</span>
             </div>
+            <input type="range" id="dist" min="5" max="100" value="10" oninput="document.getElementById('d-val').innerText=this.value">
         </div>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="handleAuth()" id="auth-btn">Connexion</button>
-        <p onclick="toggleAuth()" style="font-size:0.7rem; cursor:pointer; color:var(--sub); margin-top:15px;">Pas de compte ? S'inscrire</p>
-    </div>
+        <button id="mainBtn" onclick="launch()">Démarrer Session</button>
+    </section>
 
-    <div id="athlete-view">
-        <div id="pairing-box" class="glass-panel" style="padding:20px; text-align:center; margin-bottom:20px;">
-            <span class="label">Lier un coach</span>
-            <input type="text" id="coach-code-input" placeholder="CODE" style="text-align:center; font-size:1.5rem;">
-            <button onclick="linkWithCoach()" class="btn-accent">REJOINDRE</button>
-        </div>
-        <div class="glass-panel" style="padding:40px; text-align:center; margin-bottom:20px;">
-            <input type="text" id="run-name" value="Sprint 100m" style="background:none; border:none; text-align:center; font-weight:700;">
-            <div id="time-display">0.00</div>
-            <span class="label">secondes</span>
-        </div>
-        <button onclick="startSprint()" id="sprintBtn" style="padding:30px;">DÉMARRER</button>
-        <button onclick="simulateFinish()" style="margin-top:10px; background:#cbd5e1; color:#475569; font-size:0.7rem;">SIMULER CAPTEUR</button>
-    </div>
+    <section class="history" id="history">
+        <div class="label-mini" style="margin-bottom: 20px;">Historique Récent</div>
+    </section>
 
-    <div id="coach-view">
-        <aside class="sidebar">
-            <h2 style="font-weight:900;">STARTGO<span style="color:var(--accent)">.</span></h2>
-            <div class="label" style="margin-bottom:15px;">Mes Athlètes</div>
-            <div id="athletes-list"></div>
-            <button onclick="logout()" style="margin-top:auto; background:none; color:var(--sub);">Déconnexion</button>
-        </aside>
-        <main class="main-coach">
-            <div class="glass-panel" style="padding:30px; margin-bottom:20px;">
-                <h1>Analytics</h1>
-                <button onclick="createInviteCode()" class="btn-accent" style="width:auto; padding:10px 30px;">Générer Code Liaison</button>
-                <div id="code-display" style="display:none; font-size:2rem; font-weight:900; margin-top:10px; color:var(--accent);">----</div>
-            </div>
-
-            <div id="details-view" class="glass-panel" style="display:none; padding:30px;">
-                <h2 id="current-athlete-name">Performance</h2>
-                
-                <div class="chart-container">
-                    <canvas id="performanceChart"></canvas>
-                </div>
-
-                <div class="label" style="margin-top:30px; display:block;">Historique</div>
-                <div id="history-list" style="margin-top:15px;"></div>
-            </div>
-        </main>
+    <div class="debug-bar">
+        <button class="btn-debug" onclick="trigger('foot')">Simu Décollage</button>
+        <button class="btn-debug" onclick="trigger('finish')">Simu Arrivée</button>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
-            authDomain: "startgo-project.firebaseapp.com",
-            projectId: "startgo-project",
-            storageBucket: "startgo-project.firebasestorage.app",
-            messagingSenderId: "920233789220",
-            appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        let isSignup = false, selectedRole = 'athlete', sprintTimer, startTime, state = "IDLE", myChart = null;
-
-        // --- AUTH ---
-        function toggleAuth() { isSignup = !isSignup; document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none'; }
-        async function handleAuth() {
-            const e = document.getElementById('email').value, p = document.getElementById('password').value;
-            try {
-                if(isSignup) {
-                    const r = await auth.createUserWithEmailAndPassword(e, p);
-                    await db.collection('users').doc(r.user.uid).set({ uid: r.user.uid, name: document.getElementById('fullname').value, role: selectedRole, email: e });
-                } else await auth.signInWithEmailAndPassword(e, p);
-            } catch(err) { alert(err.message); }
-        }
-        function logout() { auth.signOut().then(() => location.reload()); }
-
-        auth.onAuthStateChanged(async user => {
-            if(user) {
-                document.getElementById('auth-section').style.display = 'none';
-                const doc = await db.collection('users').doc(user.uid).get();
-                const data = doc.data();
-                if(data.role === 'coach') {
-                    document.getElementById('coach-view').style.display = 'grid';
-                    initCoach(user.uid);
-                } else {
-                    document.getElementById('athlete-view').style.display = 'block';
-                    if(data.coachId) document.getElementById('pairing-box').style.display = 'none';
-                }
-            }
-        });
-
-        // --- LOGIQUE COACH & GRAPH ---
-        function initCoach(coachId) {
-            db.collection('users').where('coachId', '==', coachId).onSnapshot(snap => {
-                const list = document.getElementById('athletes-list');
-                list.innerHTML = "";
-                snap.forEach(doc => {
-                    const a = doc.data();
-                    const b = document.createElement('button');
-                    b.className = "athlete-btn";
-                    b.innerText = a.name;
-                    b.onclick = () => loadAthleteData(a);
-                    list.appendChild(b);
-                });
-            });
-
-            // Notifications
-            db.collection('sessions').where('coachId', '==', coachId).where('serverDate', '>', new Date()).onSnapshot(snap => {
-                snap.docChanges().forEach(c => { if(c.type === "added") notify(c.doc.data()); });
-            });
-        }
-
-        async function createInviteCode() {
-            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-            await db.collection('pairing_codes').doc(code).set({ coachId: auth.currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            document.getElementById('code-display').innerText = code;
-            document.getElementById('code-display').style.display = 'block';
-        }
-
-        function loadAthleteData(athlete) {
-            document.getElementById('details-view').style.display = 'block';
-            document.getElementById('current-athlete-name').innerText = athlete.name;
-
-            db.collection('sessions').where('athleteId', '==', athlete.uid).orderBy('serverDate', 'asc').onSnapshot(snap => {
-                const labels = [], values = [], history = document.getElementById('history-list');
-                history.innerHTML = "";
-                
-                snap.forEach(doc => {
-                    const s = doc.data();
-                    const d = s.serverDate.toDate().toLocaleDateString();
-                    labels.push(d);
-                    values.push(parseFloat(s.time));
-                    history.insertAdjacentHTML('afterbegin', `<div style="background:rgba(255,255,255,0.3); padding:10px; border-radius:10px; margin-bottom:5px; display:flex; justify-content:space-between;"><b>${s.time}s</b> <span>${d}</span></div>`);
-                });
-
-                updateChart(labels, values);
-            });
-        }
-
-        function updateChart(labels, data) {
-            const ctx = document.getElementById('performanceChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Temps (secondes)',
-                        data: data,
-                        borderColor: '#ff4757',
-                        backgroundColor: 'rgba(255, 71, 87, 0.1)',
-                        borderWidth: 4,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#ff4757',
-                        pointRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { reverse: true, grid: { display: false } }, // Reverse car moins de temps = mieux
-                        x: { grid: { display: false } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        function notify(s) {
-            const t = document.createElement('div');
-            t.className = "toast";
-            t.innerText = `Nouveau temps: ${s.time}s par ${s.athleteName}`;
-            document.body.appendChild(t);
-            setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 500); }, 3000);
-        }
-
-        // --- LOGIQUE ATHLETE ---
-        async function linkWithCoach() {
-            const code = document.getElementById('coach-code-input').value.toUpperCase();
-            const snap = await db.collection('pairing_codes').doc(code).get();
-            if(snap.exists) {
-                await db.collection('users').doc(auth.currentUser.uid).update({ coachId: snap.data().coachId });
-                document.getElementById('pairing-box').style.display = 'none';
-                alert("Liaison Coach OK !");
-            } else alert("Code invalide");
-        }
-
-        function startSprint() {
-            state = "WAITING";
-            document.getElementById('sprintBtn').innerText = "ATTENTE...";
-            setTimeout(() => {
-                startTime = performance.now();
-                state = "RUNNING";
-                document.getElementById('sprintBtn').innerText = "GO !";
-                sprintTimer = setInterval(() => {
-                    document.getElementById('time-display').innerText = ((performance.now() - startTime) / 1000).toFixed(2);
-                }, 40);
-            }, 3000 + Math.random() * 5000);
-        }
-
-        async function simulateFinish() {
-            clearInterval(sprintTimer);
-            state = "IDLE";
-            document.getElementById('sprintBtn').innerText = "DÉMARRER";
-            const user = auth.currentUser;
-            const uData = (await db.collection('users').doc(user.uid).get()).data();
-            await db.collection('sessions').add({
-                athleteId: user.uid, athleteName: uData.name, coachId: uData.coachId,
-                time: document.getElementById('time-display').innerText,
-                name: document.getElementById('run-name').value,
-                serverDate: firebase.firestore.Timestamp.now()
-            });
-            alert("Temps envoyé !");
-        }
-    </script>
-</body>
-</html>        .stat-card { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; }
-        .stat-label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--sub); margin-bottom: 5px; }
-        .stat-val { font-weight: 600; font-size: 1.1rem; }
-
-        button { 
-            width: 100%; padding: 22px; border-radius: 25px; border: none; 
-            background: var(--accent); color: var(--bg); 
-            font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s;
-        }
-        button:active { transform: scale(0.96); opacity: 0.8; }
-
-        /* Simulation Panel */
-        .remote { margin-top: 40px; display: flex; gap: 10px; opacity: 0.5; transition: 0.3s; }
-        .remote:hover { opacity: 1; }
-        .btn-test { padding: 10px; font-size: 0.7rem; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; flex: 1; }
-
-        /* History */
-        .history { margin-top: 50px; width: 100%; border-top: 1px solid var(--border); padding-top: 20px; }
-        .history-title { font-size: 0.8rem; font-weight: 700; color: var(--sub); margin-bottom: 15px; display: block; }
-        .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <header>
-            <span id="dot" class="status-dot"></span>
-            <span id="status">En attente</span>
-        </header>
-
-        <div class="main-display">
-            <span id="time">0.000</span><span class="unit">s</span>
-        </div>
-
-        <div class="grid">
-            <div class="stat-card">
-                <span class="stat-label">RÉACTION</span>
-                <span id="react-val" class="stat-val">--</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">VITESSE</span>
-                <span id="speed-val" class="stat-val">--</span>
-            </div>
-        </div>
-
-        <button id="mainBtn" onclick="runSession()">LANCER</button>
-
-        <div class="remote">
-            <button class="btn-test" onclick="trigger('foot')">DÉCOLLAGE</button>
-            <button class="btn-test" onclick="trigger('finish')">ARRIVÉE</button>
-        </div>
-
-        <div class="history">
-            <span class="history-title">HISTORIQUE</span>
-            <div id="history-list"></div>
-        </div>
-    </div>
-
-    <script>
-        let startTime, reactionTime, interval;
-        let state = "IDLE";
+        let state = "IDLE", startTime, timer;
         const audio = new (window.AudioContext || window.webkitAudioContext)();
 
         function beep(f, d) {
-            const o = audio.createOscillator(); const g = audio.createGain();
+            const o = audio.createOscillator(), g = audio.createGain();
             o.connect(g); g.connect(audio.destination);
             o.frequency.value = f; o.start(); setTimeout(() => o.stop(), d);
         }
 
-        function runSession() {
-            state = "WAITING";
-            document.getElementById('status').innerText = "Attention...";
-            document.getElementById('dot').style.background = "#f59e0b";
-            document.getElementById('mainBtn').disabled = true;
-
+        function launch() {
+            state = "WAIT";
+            document.getElementById('status').innerText = "○ En attente...";
+            document.getElementById('status').style.color = "var(--accent)";
+            
             setTimeout(() => {
-                if(state !== "WAITING") return;
-                beep(1000, 400);
+                if(state !== "WAIT") return;
+                beep(800, 200);
                 startTime = performance.now();
-                state = "RUNNING";
-                document.getElementById('status').innerText = "En cours";
-                document.getElementById('dot').style.background = "#10b981";
-                interval = setInterval(() => {
-                    document.getElementById('time').innerText = ((performance.now()-startTime)/1000).toFixed(3);
-                }, 10);
-            }, 1500 + Math.random() * 2000);
+                state = "RUN";
+                document.getElementById('status').innerText = "● Course en cours";
+                document.getElementById('status').style.color = "var(--text)";
+                timer = setInterval(() => {
+                    document.getElementById('time').innerText = ((performance.now()-startTime)/1000).toFixed(2);
+                }, 40);
+            }, 1000 + Math.random() * 2000);
         }
 
         function trigger(type) {
-            if(state !== "RUNNING") return;
+            if(state !== "RUN") return;
             if(type === 'foot') {
-                reactionTime = (performance.now() - startTime) / 1000;
-                document.getElementById('react-val').innerText = reactionTime.toFixed(3) + "s";
-                beep(500, 50);
+                const r = (performance.now() - startTime)/1000;
+                document.getElementById('react').innerHTML = `${r.toFixed(2)} <small>s</small>`;
             } else {
-                clearInterval(interval);
-                const total = ((performance.now() - startTime) / 1000).toFixed(3);
-                const speed = (10 / total).toFixed(1);
-                document.getElementById('speed-val').innerText = speed + " m/s";
-                saveHistory(total, speed);
-                reset();
+                clearInterval(timer);
+                const t = parseFloat(document.getElementById('time').innerText);
+                const d = document.getElementById('dist').value;
+                const v = ((d / t) * 3.6).toFixed(1);
+                document.getElementById('speed').innerHTML = `${v} <small>km/h</small>`;
+                addHistory(t, v);
+                state = "IDLE";
+                document.getElementById('status').innerText = "● Session Terminée";
             }
         }
 
-        function reset() {
-            state = "IDLE";
-            document.getElementById('status').innerText = "Prêt";
-            document.getElementById('dot').style.background = "#94a3b8";
-            document.getElementById('mainBtn').disabled = false;
-        }
-
-        function saveHistory(t, s) {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerHTML = `<span>Temps : <b>${t}s</b></span> <span style="color:var(--sub)">${s} m/s</span>`;
-            const list = document.getElementById('history-list');
-            list.prepend(item);
-            if(list.children.length > 5) list.lastChild.remove();
-        }
-    </script>
-</body>
-</html>        
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { font-size: 0.65rem; font-weight: 800; color: var(--sub); text-transform: uppercase; margin-left: 15px; }
-        
-        input {
-            width: 100%; padding: 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.8);
-            background: rgba(255,255,255,0.5); margin-top: 5px; outline: none; box-sizing: border-box;
-            font-weight: 600; transition: 0.3s;
-        }
-        input:focus { border-color: var(--accent); background: white; }
-
-        .role-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
-        
-        .role-option {
-            padding: 15px; border-radius: 20px; background: rgba(255,255,255,0.4);
-            border: 2px solid transparent; cursor: pointer; font-weight: 800; font-size: 0.8rem;
-            transition: 0.3s; color: var(--sub);
-        }
-        .role-option.active { border-color: var(--accent); color: var(--accent); background: white; }
-
-        #mainBtn {
-            width: 100%; padding: 20px; border-radius: 25px; border: none;
-            background: var(--text); color: white; font-weight: 800; cursor: pointer;
-            margin-top: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: 0.3s;
-        }
-        #mainBtn:hover { transform: translateY(-2px); opacity: 0.9; }
-
-        .toggle-link { font-size: 0.75rem; margin-top: 25px; cursor: pointer; color: var(--sub); font-weight: 600; }
-    </style>
-</head>
-<body>
-
-    <div class="auth-card">
-        <h2>STARTGO<span style="color:var(--accent)">.</span></h2>
-        
-        <div id="signup-fields" style="display: none;">
-            <div class="input-group">
-                <label>Nom complet</label>
-                <input type="text" id="fullname" placeholder="Ex: Marc Kevin">
-            </div>
-            <div class="role-selector">
-                <div class="role-option active" id="opt-athlete" onclick="selectRole('athlete')">ATHLÈTE</div>
-                <div class="role-option" id="opt-coach" onclick="selectRole('coach')">COACH</div>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Email</label>
-            <input type="email" id="email" placeholder="coach@startgo.com">
-        </div>
-        
-        <div class="input-group">
-            <label>Mot de passe</label>
-            <input type="password" id="password" placeholder="••••••••">
-        </div>
-
-        <button id="mainBtn" onclick="handleAuth()">Se connecter</button>
-        <div class="toggle-link" id="toggle-btn" onclick="toggleMode()">Nouveau ici ? Créer un compte</div>
-    </div>
-
-    <script>
-        // Ta config Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
-            authDomain: "startgo-project.firebaseapp.com",
-            projectId: "startgo-project",
-            storageBucket: "startgo-project.firebasestorage.app",
-            messagingSenderId: "920233789220",
-            appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
-        };
-
-        // Initialisation
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let isSignup = false;
-        let currentRole = 'athlete'; // Variable pour stocker le rôle choisi
-
-        // Alterne entre Login et Sign-up
-        function toggleMode() {
-            isSignup = !isSignup;
-            document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('mainBtn').innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            document.getElementById('toggle-btn').innerText = isSignup ? 'Déjà inscrit ? Connexion' : 'Nouveau ici ? Créer un compte';
-        }
-
-        // Gère la sélection visuelle et logique du rôle
-        function selectRole(role) {
-            currentRole = role; 
-            document.getElementById('opt-athlete').classList.toggle('active', role === 'athlete');
-            document.getElementById('opt-coach').classList.toggle('active', role === 'coach');
-        }
-
-        // Fonction principale d'authentification
-        async function handleAuth() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('mainBtn');
-
-            if (!email || !password) {
-                alert("Veuillez remplir tous les champs.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Chargement...";
-
-            try {
-                if (isSignup) {
-                    const name = document.getElementById('fullname').value.trim();
-                    if (!name) throw new Error("Le nom est obligatoire.");
-
-                    // 1. Création de l'utilisateur
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    
-                    // 2. Création du profil dans Firestore
-                    await db.collection('users').doc(userCredential.user.uid).set({
-                        name: name,
-                        role: currentRole,
-                        email: email,
-                        uid: userCredential.user.uid,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    alert("Compte créé avec succès en tant que " + currentRole + " !");
-                } else {
-                    // Connexion simple
-                    await auth.signInWithEmailAndPassword(email, password);
-                    alert("Connexion réussie !");
-                }
-
-                // Redirection (Optionnel : décommente la ligne suivante)
-                // window.location.href = "dashboard.html";
-
-            } catch (error) {
-                alert("Erreur : " + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            }
-        }
-    </script>
-</body>
-</html>        
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { font-size: 0.65rem; font-weight: 800; color: var(--sub); text-transform: uppercase; margin-left: 15px; }
-        
-        input {
-            width: 100%; padding: 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.8);
-            background: rgba(255,255,255,0.5); margin-top: 5px; outline: none; box-sizing: border-box;
-            font-weight: 600; transition: 0.3s;
-        }
-        input:focus { border-color: var(--accent); background: white; }
-
-        .role-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
-        
-        .role-option {
-            padding: 15px; border-radius: 20px; background: rgba(255,255,255,0.4);
-            border: 2px solid transparent; cursor: pointer; font-weight: 800; font-size: 0.8rem;
-            transition: 0.3s; color: var(--sub);
-        }
-        .role-option.active { border-color: var(--accent); color: var(--accent); background: white; }
-
-        #mainBtn {
-            width: 100%; padding: 20px; border-radius: 25px; border: none;
-            background: var(--text); color: white; font-weight: 800; cursor: pointer;
-            margin-top: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: 0.3s;
-        }
-        #mainBtn:hover { transform: translateY(-2px); opacity: 0.9; }
-
-        .toggle-link { font-size: 0.75rem; margin-top: 25px; cursor: pointer; color: var(--sub); font-weight: 600; }
-    </style>
-</head>
-<body>
-
-    <div class="auth-card">
-        <h2>STARTGO<span style="color:var(--accent)">.</span></h2>
-        
-        <div id="signup-fields" style="display: none;">
-            <div class="input-group">
-                <label>Nom complet</label>
-                <input type="text" id="fullname" placeholder="Ex: Marc Kevin">
-            </div>
-            <div class="role-selector">
-                <div class="role-option active" id="opt-athlete" onclick="selectRole('athlete')">ATHLÈTE</div>
-                <div class="role-option" id="opt-coach" onclick="selectRole('coach')">COACH</div>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Email</label>
-            <input type="email" id="email" placeholder="coach@startgo.com">
-        </div>
-        
-        <div class="input-group">
-            <label>Mot de passe</label>
-            <input type="password" id="password" placeholder="••••••••">
-        </div>
-
-        <button id="mainBtn" onclick="handleAuth()">Se connecter</button>
-        <div class="toggle-link" id="toggle-btn" onclick="toggleMode()">Nouveau ici ? Créer un compte</div>
-    </div>
-
-    <script>
-        // Ta config Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKvUUqhl9xIBFVuBDT35rbjkFxBxWX5ZU",
-            authDomain: "startgo-project.firebaseapp.com",
-            projectId: "startgo-project",
-            storageBucket: "startgo-project.firebasestorage.app",
-            messagingSenderId: "920233789220",
-            appId: "1:920233789220:web:9f8a8d9fd3a3add39a55b1"
-        };
-
-        // Initialisation
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let isSignup = false;
-        let currentRole = 'athlete'; // Variable pour stocker le rôle choisi
-
-        // Alterne entre Login et Sign-up
-        function toggleMode() {
-            isSignup = !isSignup;
-            document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('mainBtn').innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            document.getElementById('toggle-btn').innerText = isSignup ? 'Déjà inscrit ? Connexion' : 'Nouveau ici ? Créer un compte';
-        }
-
-        // Gère la sélection visuelle et logique du rôle
-        function selectRole(role) {
-            currentRole = role; 
-            document.getElementById('opt-athlete').classList.toggle('active', role === 'athlete');
-            document.getElementById('opt-coach').classList.toggle('active', role === 'coach');
-        }
-
-        // Fonction principale d'authentification
-        async function handleAuth() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('mainBtn');
-
-            if (!email || !password) {
-                alert("Veuillez remplir tous les champs.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Chargement...";
-
-            try {
-                if (isSignup) {
-                    const name = document.getElementById('fullname').value.trim();
-                    if (!name) throw new Error("Le nom est obligatoire.");
-
-                    // 1. Création de l'utilisateur
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    
-                    // 2. Création du profil dans Firestore
-                    await db.collection('users').doc(userCredential.user.uid).set({
-                        name: name,
-                        role: currentRole,
-                        email: email,
-                        uid: userCredential.user.uid,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    alert("Compte créé avec succès en tant que " + currentRole + " !");
-                } else {
-                    // Connexion simple
-                    await auth.signInWithEmailAndPassword(email, password);
-                    alert("Connexion réussie !");
-                }
-
-                // Redirection (Optionnel : décommente la ligne suivante)
-                // window.location.href = "dashboard.html";
-
-            } catch (error) {
-                alert("Erreur : " + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = isSignup ? 'Créer le compte' : 'Se connecter';
-            }
+        function addHistory(t, v) {
+            const h = document.getElementById('history');
+            const div = document.createElement('div');
+            div.className = 'history-row';
+            div.innerHTML = `<span style="font-weight:700">${t}s</span><span style="color:var(--sub)">${v} km/h</span>`;
+            h.insertBefore(div, h.childNodes[2]);
         }
     </script>
 </body>
