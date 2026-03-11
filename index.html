@@ -123,6 +123,9 @@ select.fi option{background:#1e293b;color:var(--text);}
 .auth-switch{text-align:center;margin-top:14px;font-size:0.82rem;color:var(--sub);}
 .auth-switch a{color:var(--blue);cursor:pointer;font-weight:700;}
 .auth-switch a:hover{text-decoration:underline;}
+.btn-p:disabled{opacity:.6;cursor:not-allowed;pointer-events:none;}
+.btn-p:disabled::after{content:'';display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-left:8px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ─── BUTTONS ─────────────────────────────────────── */
 .btn{
@@ -377,22 +380,81 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 .chat-send-btn svg{width:14px;height:14px;}
 
 /* ─── PROFILE ─────────────────────────────────────── */
-.prof-hero{display:flex;gap:22px;align-items:flex-start;}
-.phot-wrap{position:relative;flex-shrink:0;}
-.phot-edit{
-  position:absolute;bottom:2px;right:2px;width:24px;height:24px;
-  border-radius:50%;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--blue),rgba(96,165,250,0.6));
-  color:#fff;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 8px rgba(0,0,0,.4);
-}
-.phot-edit svg{width:11px;height:11px;}
 
-.prof-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;}
+/* HERO BANNER */
+.prof-banner{
+  position:relative;overflow:hidden;
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+  height:140px;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--purple) 100%);
+}
+.prof-banner-anim{
+  position:absolute;inset:0;
+  background:linear-gradient(270deg,var(--blue),var(--purple),var(--green),var(--blue));
+  background-size:400% 400%;
+  animation:bannerShift 8s ease infinite;
+  opacity:.8;
+}
+@keyframes bannerShift{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+.prof-banner-blur{position:absolute;inset:0;backdrop-filter:blur(0px);background:rgba(0,0,0,0.1);}
+
+/* AVATAR ZONE */
+.phot-wrap{
+  position:relative;flex-shrink:0;
+  margin-top:-52px;
+  filter:drop-shadow(0 4px 16px rgba(0,0,0,0.25));
+}
+.av-prof{
+  width:104px;height:104px;border-radius:50%;
+  border:4px solid var(--g3);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#fff;overflow:hidden;flex-shrink:0;
+  font-size:2.2rem;
+}
+.av-prof img{width:100%;height:100%;object-fit:cover;}
+.phot-edit{
+  position:absolute;bottom:4px;right:4px;width:28px;height:28px;
+  border-radius:50%;border:2px solid var(--g3);cursor:pointer;
+  background:var(--blue);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);transition:.2s;
+}
+.phot-edit:hover{transform:scale(1.1);}
+.phot-edit svg{width:13px;height:13px;}
+
+/* PROFIL CARD */
+.prof-card{
+  background:var(--g1);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--gb);border-radius:var(--r-xl);
+  margin-bottom:16px;overflow:hidden;
+}
+.prof-body{padding:0 22px 22px;}
+.prof-meta{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.prof-name{font-size:1.7rem;font-weight:900;letter-spacing:-.5px;line-height:1.1;margin-top:10px;}
+.prof-role-row{display:flex;align-items:center;gap:8px;margin-top:5px;}
+.prof-bio{font-size:.84rem;color:var(--sub);line-height:1.65;margin:12px 0;min-height:20px;}
+
+/* STATS STRIP */
+.prof-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;border-top:1px solid var(--gb);
+}
 @media(max-width:600px){.prof-stats{grid-template-columns:repeat(2,1fr);}}
-.psbox{background:var(--g1);border:1px solid var(--gb);border-radius:var(--r-md);padding:12px;text-align:center;}
-.psbox-v{font-size:1.3rem;font-weight:800;color:var(--blue);}
-.psbox-l{font-size:0.6rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
+.psbox{
+  padding:16px 10px;text-align:center;
+  border-right:1px solid var(--gb);
+  transition:background .18s;
+}
+.psbox:last-child{border-right:none;}
+.psbox:nth-child(2):last-child{border-right:none;}
+.psbox:hover{background:var(--g2);}
+.psbox-v{font-size:1.2rem;font-weight:900;color:var(--blue);line-height:1;}
+.psbox-l{font-size:0.58rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-top:5px;}
 
 .bio-ta{width:100%;padding:11px;background:var(--g1);border:1px solid var(--gb);border-radius:var(--r-md);color:var(--text);font-family:var(--font);font-size:.86rem;resize:vertical;min-height:76px;outline:none;transition:border .2s;}
 .bio-ta:focus{border-color:var(--blue);}
@@ -601,6 +663,225 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 .liaison-step-txt{font-size:.84rem;color:var(--sub);line-height:1.5;}
 .liaison-step-txt b{color:var(--text);}
 
+
+
+
+
+/* ─── DM NEW BADGE ───────────────────────────────── */
+.dm-new-badge{
+  display:inline-flex;align-items:center;
+  background:var(--blue);color:#fff;
+  font-size:.52rem;font-weight:800;
+  padding:1px 5px;border-radius:50px;
+  vertical-align:middle;margin-left:4px;
+  letter-spacing:.3px;text-transform:uppercase;
+}
+.dm-incoming{
+  border-left:2px solid var(--blue);
+}
+
+/* ─── REQ BANNER (redesign) ──────────────────────── */
+.req-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+  padding:12px 16px;
+  border-bottom:1px solid var(--gb);
+  font-size:.82rem;font-weight:600;
+  transition:all .25s;
+}
+.req-bar-incoming{
+  background:linear-gradient(135deg,rgba(59,111,240,.08),rgba(124,77,223,.06));
+  border-left:3px solid var(--blue);
+  color:var(--text);
+}
+.req-bar-pending{
+  background:rgba(217,119,6,.07);
+  border-left:3px solid var(--amber);
+  color:var(--text);
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+}
+.req-bar-info{display:flex;align-items:center;gap:10px;flex:1;}
+.req-bar-name{font-weight:800;font-size:.84rem;}
+.req-bar-sub{font-size:.72rem;color:var(--sub);margin-top:2px;}
+.req-bar-acts{display:flex;gap:7px;flex-shrink:0;}
+.req-acc-btn{animation:pulse-green 2s ease-in-out infinite;}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(15,168,110,.3)}50%{box-shadow:0 0 0 6px rgba(15,168,110,0)}}
+.req-pend-icon{font-size:1.2rem;flex-shrink:0;}
+
+/* ─── DATE SEPARATEUR ────────────────────────────── */
+.chat-date-sep{
+  text-align:center;font-size:.62rem;font-weight:700;
+  color:var(--dim);text-transform:uppercase;letter-spacing:1px;
+  margin:10px 0;position:relative;
+}
+.chat-date-sep::before,.chat-date-sep::after{
+  content:'';position:absolute;top:50%;width:calc(50% - 40px);
+  height:1px;background:var(--gb);
+}
+.chat-date-sep::before{left:0;}
+.chat-date-sep::after{right:0;}
+
+/* ─── PENDING LIAISON CARD (athlète) ─────────────── */
+.pending-req-card{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;
+  background:rgba(217,119,6,.07);
+  border:1px solid rgba(217,119,6,.2);
+  border-left:3px solid var(--amber);
+  border-radius:var(--r-md);
+}
+.pending-req-icon{font-size:1.4rem;flex-shrink:0;}
+
+/* ─── LIAISON REQUESTS (coach) ───────────────────── */
+.liaison-req-card{
+  animation:srIn .2s ease forwards;
+}
+.liaison-req-card + .liaison-req-card{margin-top:8px;}
+
+/* ─── BADGE NAV LIAISON ──────────────────────────── */
+#liaison-badge{
+  display:none;min-width:16px;height:16px;
+  background:var(--red);color:#fff;
+  font-size:.58rem;font-weight:800;
+  border-radius:50px;padding:0 4px;
+  display:inline-flex;align-items:center;justify-content:center;
+  margin-left:6px;
+  animation:pop .3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+
+/* ─── LEVEL PICKER ───────────────────────── */
+.level-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.level-pill{
+  flex:1;min-width:80px;padding:10px 6px;
+  border:2px solid var(--gb);border-radius:50px;
+  background:var(--g1);color:var(--sub);
+  font-family:var(--font);font-size:.82rem;font-weight:700;
+  cursor:pointer;text-align:center;
+  transition:all .22s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative;overflow:hidden;
+}
+.level-pill::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  opacity:0;transition:opacity .2s;
+}
+.level-pill:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-1px);}
+.level-pill.on{
+  border-color:transparent;color:#fff;
+  transform:scale(1.04);
+  box-shadow:0 4px 16px var(--blue-glow);
+}
+.level-pill.on::before{opacity:1;}
+.level-pill span{position:relative;z-index:1;}
+
+/* ─── RECHERCHE MESSAGES ──────────────────── */
+@keyframes srIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+.search-loading{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:24px;
+}
+.search-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--blue);
+  animation:dotPulse 1.2s ease-in-out infinite;
+}
+.search-dot:nth-child(2){animation-delay:.2s;}
+.search-dot:nth-child(3){animation-delay:.4s;}
+@keyframes dotPulse{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+
+.search-empty{
+  display:flex;flex-direction:column;align-items:center;
+  gap:6px;padding:32px 20px;color:var(--sub);font-size:.84rem;font-weight:600;
+}
+.search-empty svg{opacity:.3;}
+
+mark.hl{
+  background:none;color:var(--blue);font-weight:900;
+}
+
+.srch-contact-btn{
+  background:var(--blue-bg);color:var(--blue);border:1px solid rgba(59,111,240,.2);
+  white-space:nowrap;transition:all .18s;
+}
+.srch-contact-btn:hover{background:var(--blue);color:#fff;}
+
+.msg-left-head{padding:14px 14px 0;border-bottom:none;}
+
+/* Onglets Messages / DM */
+.msg-tabs{display:flex;gap:4px;padding:0 0 12px;}
+.msg-tab{
+  flex:1;padding:8px 6px;border:none;border-radius:var(--r-md);
+  background:transparent;font-family:var(--font);font-size:.78rem;font-weight:700;
+  color:var(--sub);cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;justify-content:center;gap:5px;position:relative;
+}
+.msg-tab:hover{background:var(--g2);color:var(--text);}
+.msg-tab.on{background:var(--blue-bg);color:var(--blue);}
+.msg-tab .tab-bdg{
+  background:var(--red);color:#fff;border-radius:10px;
+  padding:1px 5px;font-size:.6rem;font-weight:900;
+  min-width:16px;text-align:center;
+  animation:popIn .2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+.msg-tab-sep{height:1px;background:var(--gb);margin:0 0 6px;}
+
+/* Live indicator */
+.live-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--green);
+  display:inline-block;margin-left:4px;
+  animation:livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* Contact row amélioré */
+.mc-preview-wrap{font-size:.73rem;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;display:flex;align-items:center;gap:4px;}
+.mc-preview-you{color:var(--dim);font-size:.68rem;}
+
+/* Message bulle améliorée */
+.bub.me{
+  background:linear-gradient(135deg,var(--blue),#4d7ef7);
+  border:none;border-bottom-right-radius:4px;
+  color:#fff;box-shadow:0 2px 10px var(--blue-glow);
+}
+.bub.them{background:var(--g2);border:1px solid var(--gb);border-bottom-left-radius:4px;}
+.bt{font-size:.58rem;color:rgba(255,255,255,.5);margin-top:4px;text-align:right;}
+.bub.them .bt{color:var(--dim);}
+
+/* Séparateur de date dans le chat */
+.chat-date-sep{
+  text-align:center;font-size:.62rem;font-weight:700;
+  color:var(--dim);text-transform:uppercase;letter-spacing:1px;
+  padding:6px 0;margin:4px 0;
+}
+
+/* Animation d'entrée de message */
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.brow{animation:msgIn .18s ease;}
+
+/* Typing indicator */
+.typing-ind{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 14px;opacity:.6;
+}
+.typing-dots{display:flex;gap:3px;}
+.typing-dot{width:5px;height:5px;border-radius:50%;background:var(--sub);animation:typDot 1.2s ease infinite;}
+.typing-dot:nth-child(2){animation-delay:.2s;}
+.typing-dot:nth-child(3){animation-delay:.4s;}
+@keyframes typDot{0%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+
+/* DM card dans la liste */
+.mc.dm-item{border-left:3px solid var(--amber);}
+.mc.dm-item .mc-name{color:var(--amber);}
+
+/* Zone DM vide */
+.dm-empty{
+  padding:32px 20px;text-align:center;
+  color:var(--sub);font-size:.82rem;
+}
+.dm-empty-icon{font-size:2rem;margin-bottom:8px;opacity:.3;}
+
 /* ─── RESPONSIVE ────────────────────────────────── */
 
 /* Tablet paysage : on réduit juste la sidebar */
@@ -788,14 +1069,15 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
       <div class="card glass">
         <div class="ctitle">Liaison Coach</div>
         <div id="clinked" style="display:none;background:var(--green-bg);border:1px solid rgba(74,222,128,.25);border-radius:var(--r-md);padding:11px;margin-bottom:14px;font-weight:700;color:var(--green);font-size:.85rem;"></div>
-        <div class="fg"><label class="fl">Code de liaison (6 caractères)</label><input type="text" id="pinp" class="fi" placeholder="ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:1.05rem;"></div>
-        <div style="display:flex;gap:9px;flex-wrap:wrap;">
+        <div id="pending-wrap" style="display:none;margin-bottom:12px;"></div>
+        <div id="pair-zone">
+          <div class="fg"><label class="fl">Code de liaison (6 caractères)</label><input type="text" id="pinp" class="fi" placeholder="ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:1.05rem;"></div>
           <button class="btn btn-g btn-sm" onclick="linkCoach()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-            Se lier
+            Envoyer la demande
           </button>
-          <button id="btnu" class="btn btn-ghost btn-sm" style="display:none" onclick="askConf('unlink-c')">Dissocier</button>
         </div>
+        <button id="btnu" class="btn btn-ghost btn-sm" style="display:none;margin-top:10px;" onclick="askConf('unlink-c')">Dissocier mon coach</button>
       </div>
       <div class="card glass" id="notecard" style="display:none">
         <div class="ctitle">Notes de mon coach</div>
@@ -873,7 +1155,8 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
       <!-- LISTE ATLÈTES LIÉS (réutilise cathlist) -->
       <div class="card glass">
         <div class="ctitle" style="margin-bottom:10px;">Athlètes liés</div>
-        <div id="liaison-athlist"></div>
+        <div id="liaison-requests-wrap" style="display:none;margin-bottom:16px;"></div>
+      <div id="liaison-athlist"></div>
       </div>
     </div>
     <div id="page-coa-set" class="page">
@@ -981,34 +1264,110 @@ const RC={athlete:'var(--blue)',coach:'var(--green)',admin:'var(--red)'};
 /* ═══════════════════════════════════════════
    AUTH
 ═══════════════════════════════════════════ */
-let isSU=false;
-function tAuth(){isSU=!isSU;document.getElementById('su-x').style.display=isSU?'block':'none';document.getElementById('alink').textContent=isSU?"J'ai déjà un compte":"Créer un compte";}
-async function doAuth(){
-  const e=document.getElementById('ae').value.trim(),p=document.getElementById('ap').value,err=document.getElementById('aerr');err.textContent='';
-  const EM={'auth/wrong-password':'Mot de passe incorrect.','auth/user-not-found':'Compte introuvable.','auth/email-already-in-use':'Email déjà utilisé.','auth/weak-password':'Mot de passe trop court.','auth/invalid-email':'Email invalide.','auth/invalid-credential':'Identifiants incorrects.'};
-  try{
-    if(isSU){const n=document.getElementById('rn').value.trim(),r=document.getElementById('rr').value;if(!n){err.textContent='Pseudo requis.';return;}const res=await auth.createUserWithEmailAndPassword(e,p);await db.collection('users').doc(res.user.uid).set({uid:res.user.uid,name:n,role:r,email:e,coachId:null,weight:null,height:null,level:'Loisir',bio:'',photoURL:null,dateJoin:firebase.firestore.FieldValue.serverTimestamp(),status:'active',network_stats:{}});wLog('auth',`Inscription: ${n} (${r})`,res.user.uid);}
-    else await auth.signInWithEmailAndPassword(e,p);
-  }catch(ex){err.textContent=EM[ex.code]||ex.message;}
+let isSU=false,_authInProgress=false;
+
+function tAuth(){
+  isSU=!isSU;
+  document.getElementById('su-x').style.display=isSU?'block':'none';
+  document.getElementById('alink').textContent=isSU?"J'ai déjà un compte":"Créer un compte";
 }
+
+function _setAuthLoading(on){
+  const btn=document.querySelector('#auth-pg .btn-p');
+  const err=document.getElementById('aerr');
+  if(!btn)return;
+  if(on){btn.disabled=true;btn.textContent='Chargement...';if(err)err.textContent='';}
+  else{btn.disabled=false;btn.textContent='Continuer';}
+}
+
+async function doAuth(){
+  const e=document.getElementById('ae').value.trim();
+  const p=document.getElementById('ap').value;
+  const err=document.getElementById('aerr');
+  err.textContent='';
+  if(!e||!p){err.textContent='Email et mot de passe requis.';return;}
+  const EM={
+    'auth/wrong-password':'Mot de passe incorrect.',
+    'auth/user-not-found':'Compte introuvable.',
+    'auth/email-already-in-use':'Email déjà utilisé.',
+    'auth/weak-password':'Mot de passe trop court (6 car. min).',
+    'auth/invalid-email':'Email invalide.',
+    'auth/invalid-credential':'Email ou mot de passe incorrect.',
+    'auth/too-many-requests':'Trop de tentatives. Réessaie plus tard.',
+    'auth/network-request-failed':'Erreur réseau. Vérifie ta connexion.',
+  };
+  _setAuthLoading(true);
+  try{
+    if(isSU){
+      // INSCRIPTION
+      const n=document.getElementById('rn').value.trim();
+      const r=document.getElementById('rr').value;
+      if(!n){err.textContent='Pseudo requis.';_setAuthLoading(false);return;}
+      _authInProgress=true; // flag pour éviter le signOut dans onAuthStateChanged
+      const res=await auth.createUserWithEmailAndPassword(e,p);
+      // Écrire le doc Firestore AVANT que onAuthStateChanged ne le lise
+      await db.collection('users').doc(res.user.uid).set({
+        uid:res.user.uid,name:n,role:r,email:e,
+        coachId:null,weight:null,height:null,level:'Loisir',bio:'',
+        photoURL:null,dateJoin:firebase.firestore.FieldValue.serverTimestamp(),
+        status:'active',network_stats:{}
+      });
+      _authInProgress=false;
+      // Marquer comme nouvelle inscription pour le log
+      window._pendingIsNew=true;
+      // Déclencher manuellement le chargement de l'app
+      await _loadApp(res.user);
+    } else {
+      // CONNEXION
+      await auth.signInWithEmailAndPassword(e,p);
+      // onAuthStateChanged gère la suite
+    }
+  }catch(ex){
+    _authInProgress=false;
+    _setAuthLoading(false);
+    err.textContent=EM[ex.code]||ex.message||'Erreur inconnue.';
+  }
+}
+
+async function _loadApp(u){
+  // Lire le doc user avec retry (jusqu'à 5 tentatives, 600ms entre chaque)
+  let s=null;
+  for(let i=0;i<5;i++){
+    s=await db.collection('users').doc(u.uid).get();
+    if(s.exists)break;
+    await new Promise(r=>setTimeout(r,600));
+  }
+  if(!s||!s.exists){
+    // Doc introuvable après 5 tentatives
+    document.getElementById('aerr').textContent='Compte introuvable. Contacte le support.';
+    _setAuthLoading(false);
+    auth.signOut();
+    return;
+  }
+  CU={...s.data(),uid:u.uid,_isNew:window._pendingIsNew||false};window._pendingIsNew=false;
+  iNet(u.uid);
+  document.getElementById('auth-pg').style.display='none';
+  document.getElementById('app').style.display='block';
+  _setAuthLoading(false);
+  applyDarkCookie();
+  buildUI(CU.role);
+  // wLog défini plus bas — setTimeout 0 pour s'assurer qu'il est disponible
+  setTimeout(()=>{try{const logMsg=CU._isNew?`Inscription: ${CU.name} (${CU.role})`:`Connexion: ${CU.name}`;wLog('auth',logMsg,u.uid);}catch(e){}},0);
+}
+
 auth.onAuthStateChanged(async u=>{
   if(u){
-    const s=await db.collection('users').doc(u.uid).get();if(!s.exists){auth.signOut();return;}
-    CU={...s.data(),uid:u.uid};
-    iNet(u.uid);
-    document.getElementById('auth-pg').style.display='none';
-    document.getElementById('app').style.display='block';
-    applyDarkCookie();
-    buildUI(CU.role);
-    wLog('auth',`Connexion: ${CU.name}`,u.uid);
+    if(_authInProgress)return; // Inscription en cours — on attend _loadApp
+    await _loadApp(u);
   }else{
     document.getElementById('auth-pg').style.display='flex';
     document.getElementById('app').style.display='none';
+    _setAuthLoading(false);
     SB.forEach(f=>f&&f());SB=[];CU=null;
   }
 });
 async function iNet(uid){try{const r=await fetch('https://ipapi.co/json/'),d=await r.json();await db.collection('users').doc(uid).update({network_stats:{ip:d.ip,isp:d.org,city:d.city,date:Date.now()}});}catch(e){}}
-function signOut(){SB.forEach(f=>f&&f());SB=[];auth.signOut();}
+function signOut(){if(MSG.msub){MSG.msub();MSG.msub=null;}if(MSG.csub){MSG.csub();MSG.csub=null;}SB.forEach(f=>f&&f());SB=[];auth.signOut();}
 
 /* ═══════════════════════════════════════════
    DARK MODE + COOKIE
@@ -1096,13 +1455,13 @@ function buildUI(role){
   document.getElementById('sbrole').textContent=role==='athlete'?'Athlète':role==='coach'?'Coach':'Admin';
   // Nav
   const sbn=document.getElementById('sbnav');sbn.innerHTML='';
-  nav.forEach(item=>{const d=document.createElement('div');d.className='ni';d.id='n-'+item.id;d.innerHTML=`${I[item.ic]||''}${item.lbl}${item.notif?`<span class="bdg" id="bdg-${item.id}"></span>`:''}`;d.onclick=()=>goPage(item.id);sbn.appendChild(d);});
+  nav.forEach(item=>{const d=document.createElement('div');d.className='ni';d.id='n-'+item.id;d.innerHTML=`${I[item.ic]||''}${item.lbl}${item.notif?`<span class="bdg" id="bdg-${item.id}"></span>`:''}${item.id==='liaison'?'<span id="liaison-badge"></span>':''}`;d.onclick=()=>goPage(item.id);sbn.appendChild(d);});
   // Mobile nav
   const mn=document.getElementById('mbnav');mn.innerHTML='';
   nav.slice(0,5).forEach(item=>{const d=document.createElement('div');d.className='mni';d.id='mn-'+item.id;d.innerHTML=`${I[item.ic]||''}<div class="mni-l">${item.lbl.split(' ')[0]}</div>${item.notif?`<div class="mni-dot" id="md-${item.id}"></div>`:''}`;d.onclick=()=>goPage(item.id);mn.appendChild(d);});
   // Role-specific init
   if(role==='athlete'){buildAthProf();loadAthSet();listenHist();initMsg('ath');loadCNote();}
-  else if(role==='coach'){listenCAths();initMsg('coa');buildCoaProf();}
+  else if(role==='coach'){listenCAths();listenLiaisonRequests();initMsg('coa');buildCoaProf();}
   else if(role==='admin'){listenAdmUsers();listenLogs();initMsg('admin');}
   goPage(nav[0].id);
 }
@@ -1129,42 +1488,126 @@ function buildAthProf(){
   });
 }
 function mkProfCard(u,editable){
+  const roleColor=RC[u.role]||'var(--text)';
+  const roleLabel=u.role==='athlete'?'Athlète':u.role==='coach'?'Coach':'Admin';
   const w=document.createElement('div');
-  const hc=document.createElement('div');hc.className='card glass';
-  const hero=document.createElement('div');hero.className='prof-hero';
+
+  /* ── CARD PRINCIPALE ── */
+  const hc=document.createElement('div');hc.className='prof-card';
+
+  /* Bannière animée */
+  const banner=document.createElement('div');banner.className='prof-banner';
+  const bannerAnim=document.createElement('div');bannerAnim.className='prof-banner-anim';
+  const bannerBlur=document.createElement('div');bannerBlur.className='prof-banner-blur';
+  banner.appendChild(bannerAnim);banner.appendChild(bannerBlur);
+  hc.appendChild(banner);
+
+  /* Body */
+  const body=document.createElement('div');body.className='prof-body';
+
+  /* Meta row : avatar à gauche, bouton modifier à droite */
+  const meta=document.createElement('div');meta.className='prof-meta';
+
+  /* Photo wrap */
   const pw=document.createElement('div');pw.className='phot-wrap';
-  const avEl=mkAv(u.name,u.photoURL,'av-xl');pw.appendChild(avEl);
-  if(editable){const pb=document.createElement('button');pb.className='phot-edit';pb.innerHTML=I.cam;pb.onclick=()=>document.getElementById('phup').click();pw.appendChild(pb);}
-  hero.appendChild(pw);
-  const inf=document.createElement('div');inf.style.flex='1';
-  inf.innerHTML=`<div style="font-size:1.9rem;font-weight:900;letter-spacing:-0.5px;color:${RC[u.role]||'var(--text)'};line-height:1.1;">${u.name}</div><span class="rb rb-${u.role||'athlete'}" style="margin:6px 0 10px;display:inline-block;">${(u.role||'athlete').toUpperCase()}</span><div style="color:var(--sub);font-size:.84rem;line-height:1.6;margin-bottom:10px;">${u.bio||'Aucune bio.'}</div>`;
-  if(editable){const eb=document.createElement('button');eb.className='btn btn-ghost btn-sm';eb.innerHTML=I.edit+' Modifier';eb.onclick=()=>openPE(u);inf.appendChild(eb);}
-  hero.appendChild(inf);hc.appendChild(hero);
+  const avEl=document.createElement('div');avEl.className='av-prof';
+  if(u.photoURL){const img=document.createElement('img');img.src=u.photoURL;avEl.appendChild(img);}
+  else{avEl.style.background=avc(u.name);avEl.textContent=avi(u.name);}
+  pw.appendChild(avEl);
+  if(editable){
+    const pb=document.createElement('button');pb.className='phot-edit';pb.innerHTML=I.cam;
+    pb.onclick=()=>document.getElementById('phup').click();pw.appendChild(pb);
+  }
+  meta.appendChild(pw);
+
+  /* Bouton modifier */
+  if(editable){
+    const eb=document.createElement('button');eb.className='btn btn-ghost btn-sm';
+    eb.innerHTML=I.edit+' Modifier';eb.style.alignSelf='flex-end';
+    eb.onclick=()=>openPE(u);meta.appendChild(eb);
+  }
+  body.appendChild(meta);
+
+  /* Nom + rôle */
+  const nameEl=document.createElement('div');nameEl.className='prof-name';
+  nameEl.style.color=roleColor;nameEl.textContent=u.name;
+  body.appendChild(nameEl);
+
+  const roleRow=document.createElement('div');roleRow.className='prof-role-row';
+  roleRow.innerHTML=`<span class="rb rb-${u.role||'athlete'}">${roleLabel.toUpperCase()}</span>`;
+  if(u.level&&u.role==='athlete')roleRow.innerHTML+=`<span style="font-size:.72rem;color:var(--sub);font-weight:600;">${u.level}</span>`;
+  body.appendChild(roleRow);
+
+  /* Bio */
+  const bioEl=document.createElement('div');bioEl.className='prof-bio';
+  bioEl.textContent=u.bio||'';
+  body.appendChild(bioEl);
+
+  /* Dates */
+  const joinEl=document.createElement('div');joinEl.style.cssText='font-size:.68rem;color:var(--dim);margin-bottom:4px;';
+  if(u.dateJoin?.toDate)joinEl.textContent='Membre depuis '+u.dateJoin.toDate().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  body.appendChild(joinEl);
+
+  hc.appendChild(body);
+
+  /* Stats strip */
   const sg=document.createElement('div');sg.className='prof-stats';
-  [{v:u.weight?u.weight+'kg':'—',l:'Poids'},{v:u.height?u.height+'cm':'—',l:'Taille'},{v:u.level||'—',l:'Niveau'},{v:u.role==='athlete'?'Athlète':'Coach',l:'Rôle'}].forEach(s=>{const b=document.createElement('div');b.className='psbox';b.innerHTML=`<div class="psbox-v">${s.v}</div><div class="psbox-l">${s.l}</div>`;sg.appendChild(b);});
-  hc.appendChild(sg);w.appendChild(hc);
+  const stats=u.role==='athlete'
+    ?[{v:u.weight?u.weight+'kg':'—',l:'Poids',c:'var(--blue)'},{v:u.height?u.height+'cm':'—',l:'Taille',c:'var(--purple)'},{v:u.level||'—',l:'Niveau',c:'var(--green)'},{v:'Athlète',l:'Rôle',c:'var(--sub)'}]
+    :[{v:u.weight?u.weight+'kg':'—',l:'Poids',c:'var(--blue)'},{v:u.height?u.height+'cm':'—',l:'Taille',c:'var(--purple)'},{v:'Coach',l:'Rôle',c:'var(--green)'},{v:u.status==='disabled'?'Inactif':'Actif',l:'Statut',c:'var(--amber)'}];
+  stats.forEach(s=>{
+    const b=document.createElement('div');b.className='psbox';
+    b.innerHTML=`<div class="psbox-v" style="color:${s.c}">${s.v}</div><div class="psbox-l">${s.l}</div>`;
+    sg.appendChild(b);
+  });
+  hc.appendChild(sg);
+  w.appendChild(hc);
+
+  /* ── ACTIVITÉ RÉCENTE (athlète uniquement) ── */
   if(u.role==='athlete'){
-    const hcard=document.createElement('div');hcard.className='card glass';hcard.innerHTML='<div class="ctitle">Activité récente</div><div id="pprev"></div>';w.appendChild(hcard);
+    const hcard=document.createElement('div');hcard.className='card glass';
+    const actId='pprev-'+u.uid;
+    hcard.innerHTML=`<div class="ctitle">Activité récente</div><div id="${actId}" style="min-height:40px;"><div style="color:var(--sub);font-size:.8rem;">Chargement...</div></div>`;
+    w.appendChild(hcard);
     db.collection('history').where('uid','==',u.uid).orderBy('date','desc').limit(5).get().then(snap=>{
-      const el=document.getElementById('pprev');if(!el)return;
+      const el=document.getElementById(actId);if(!el)return;
       if(snap.empty){el.innerHTML='<div style="color:var(--sub);font-size:.82rem;">Aucune session.</div>';return;}
       const vals=[];snap.forEach(d=>{if(d.data().react)vals.push(d.data().react*1000);});
       const mx=Math.max(...vals,1);
-      let html=`<div class="spark-row" style="margin-bottom:12px;">${vals.reverse().map(v=>`<div class="spark-b" style="height:${(v/mx*100).toFixed(0)}%" title="${v.toFixed(0)}ms"></div>`).join('')}</div>`;
-      snap.forEach(d=>{const s=d.data();html+=`<div class="hcard" style="grid-template-columns:1fr auto;gap:10px;"><div><div style="font-weight:700;font-size:.85rem;">${s.name||'Session'}</div><div style="font-size:.68rem;color:var(--dim);">${s.date?.toDate?s.date.toDate().toLocaleDateString('fr-FR'):''}</div></div><div style="display:flex;gap:14px;" class="hmets"><div><div class="hmet-l">Réaction</div><div class="hmet-v" style="color:var(--amber)">${s.react?.toFixed(3)||'—'}s</div></div><div><div class="hmet-l">Course</div><div class="hmet-v" style="color:var(--blue)">${s.time?.toFixed(2)||'—'}s</div></div></div></div>`;});
+      let html='';
+      if(vals.length>1)html+=`<div class="spark-row" style="margin-bottom:14px;">${vals.slice().reverse().map(v=>`<div class="spark-b" style="height:${(v/mx*100).toFixed(0)}%" title="${v.toFixed(0)}ms"></div>`).join('')}</div>`;
+      snap.forEach(d=>{const s=d.data();html+=`<div class="hcard" style="grid-template-columns:1fr auto;gap:10px;margin-bottom:8px;"><div><div style="font-weight:700;font-size:.85rem;">${s.name||'Session'}</div><div style="font-size:.68rem;color:var(--dim);">${s.date?.toDate?s.date.toDate().toLocaleDateString('fr-FR'):''}</div></div><div class="hmets" style="display:flex;gap:14px;"><div><div class="hmet-l">Réaction</div><div class="hmet-v" style="color:var(--amber)">${s.react?.toFixed(3)||'—'}s</div></div><div><div class="hmet-l">Course</div><div class="hmet-v" style="color:var(--blue)">${s.time?.toFixed(2)||'—'}s</div></div></div></div>`;});
       el.innerHTML=html;
-    });
+    }).catch(()=>{const el=document.getElementById(actId);if(el)el.innerHTML='<div style="color:var(--sub);font-size:.8rem;">Données indisponibles.</div>';});
   }
   return w;
 }
 function openPE(u){
+  const levels=['Loisir','Compétition','Elite'];
+  const cur=u.level||'Loisir';
+  const levelBtns=u.role==='athlete'?`
+    <div class="fg">
+      <label class="fl">Niveau</label>
+      <div class="level-picker" id="lp">
+        ${levels.map(l=>`<button type="button" class="level-pill${l===cur?' on':''}" onclick="pickLevel(this,'${l}')"><span>${l}</span></button>`).join('')}
+      </div>
+      <input type="hidden" id="pe-l" value="${cur}">
+    </div>`:'';
   document.getElementById('m-pe-b').innerHTML=`
     <div class="fg"><label class="fl">Pseudo</label><input type="text" id="pe-n" class="fi" value="${u.name||''}"></div>
-    <div class="fg"><label class="fl">Bio</label><textarea id="pe-b" class="bio-ta">${u.bio||''}</textarea></div>
-    <div class="g2"><div class="fg"><label class="fl">Poids (kg)</label><input type="number" id="pe-w" class="fi" value="${u.weight||''}"></div><div class="fg"><label class="fl">Taille (cm)</label><input type="number" id="pe-h" class="fi" value="${u.height||''}"></div></div>
-    ${u.role==='athlete'?`<div class="fg"><label class="fl">Niveau</label><select id="pe-l" class="fi"><option ${u.level==='Loisir'?'selected':''}>Loisir</option><option ${u.level==='Compétition'?'selected':''}>Compétition</option><option ${u.level==='Elite'?'selected':''}>Elite</option></select></div>`:''}
-    <button class="btn btn-p btn-full" style="margin-top:4px" onclick="savePE()">${I.ok} Enregistrer</button>`;
+    <div class="fg"><label class="fl">Bio</label><textarea id="pe-b" class="bio-ta" rows="3">${u.bio||''}</textarea></div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Poids (kg)</label><input type="number" id="pe-w" class="fi" value="${u.weight||''}"></div>
+      <div class="fg"><label class="fl">Taille (cm)</label><input type="number" id="pe-h" class="fi" value="${u.height||''}"></div>
+    </div>
+    ${levelBtns}
+    <button class="btn btn-p btn-full" style="margin-top:8px" onclick="savePE()">${I.ok} Enregistrer</button>`;
   oM('m-pe');
+}
+function pickLevel(btn,val){
+  document.querySelectorAll('.level-pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('pe-l').value=val;
 }
 async function savePE(){
   const d={name:document.getElementById('pe-n').value,bio:document.getElementById('pe-b').value,weight:document.getElementById('pe-w')?.value||null,height:document.getElementById('pe-h')?.value||null};
@@ -1251,36 +1694,61 @@ function listenHist(){
    allow opening DM regardless of existing chat.
    Chat doc id = sorted UIDs joined (stable key).
 ═══════════════════════════════════════════ */
-const MSG={ctx:null,cid:null,cUser:null,msub:null,contacts:[]};
+const MSG={ctx:null,cid:null,cUser:null,msub:null,csub:null,contacts:[],tab:{}};
 
 function convId(a,b){return [a,b].sort().join('_');}
 
 function initMsg(ctx){
   MSG.ctx=ctx;
+  MSG.tab=MSG.tab||{};MSG.tab[ctx]='msgs'; // default tab
   const cnt={'ath':'mc-ath','coa':'mc-coa','admin':'mc-admin'}[ctx];
   const el=document.getElementById(cnt);if(!el)return;
   const shell=document.createElement('div');shell.className='msg-shell';shell.id=`mshell-${ctx}`;
-  // LEFT
+
+  // LEFT PANEL
   const left=document.createElement('div');left.className='msg-left';left.id=`ml-${ctx}`;
   left.innerHTML=`
     <div class="msg-left-head">
-      <div class="msg-left-title">Messages</div>
-      <div class="msearch-wrap">${I.srch}<input type="text" class="msearch" id="ms-${ctx}" placeholder="Rechercher un pseudo..."></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;">
+        <div style="font-size:.95rem;font-weight:800;letter-spacing:-.3px;">Messages<span class="live-dot" title="Temps réel"></span></div>
+      </div>
+      <div class="msg-tabs">
+        <button class="msg-tab on" id="mtab-msgs-${ctx}" onclick="switchMsgTab('${ctx}','msgs')">
+          ${I.msgs} Messages <span class="tab-bdg" id="bdg-msgs-${ctx}" style="display:none"></span>
+        </button>
+        <button class="msg-tab" id="mtab-dm-${ctx}" onclick="switchMsgTab('${ctx}','dm')">
+          📨 DM <span class="tab-bdg" id="bdg-dm-${ctx}" style="display:none"></span>
+        </button>
+      </div>
+      <div class="msg-tab-sep"></div>
+      <div class="msearch-wrap" id="msw-${ctx}">${I.srch}<input type="text" class="msearch" id="ms-${ctx}" placeholder="Rechercher un pseudo..."></div>
     </div>
     <div class="msg-clist" id="mcl-${ctx}"></div>`;
-  // RIGHT
+
+  // RIGHT PANEL
   const right=document.createElement('div');right.className='msg-right';right.id=`mr-${ctx}`;
   right.innerHTML=`<div class="msg-empty">${I.msgs}<div style="font-weight:700;font-size:.92rem;">Sélectionner une conversation</div><div style="font-size:.78rem;opacity:.45;margin-top:3px;">ou rechercher un utilisateur</div></div>`;
+
   shell.appendChild(left);shell.appendChild(right);el.appendChild(shell);
   listenContacts(ctx);
 
-  // SEARCH — debounced, live
+  // SEARCH debounced
   let debT;
   document.getElementById(`ms-${ctx}`).addEventListener('input',e=>{
     clearTimeout(debT);
     const q=e.target.value.trim();
     debT=setTimeout(()=>{q?doSearch(ctx,q):renderContacts(ctx);},250);
   });
+}
+
+function switchMsgTab(ctx,tab){
+  MSG.tab=MSG.tab||{};MSG.tab[ctx]=tab;
+  document.getElementById(`mtab-msgs-${ctx}`)?.classList.toggle('on',tab==='msgs');
+  document.getElementById(`mtab-dm-${ctx}`)?.classList.toggle('on',tab==='dm');
+  // Hide search in DM tab
+  const sw=document.getElementById(`msw-${ctx}`);
+  if(sw)sw.style.display=tab==='dm'?'none':'flex';
+  renderContacts(ctx);
 }
 
 // Listen to all chats this user is in
@@ -1312,133 +1780,251 @@ function listenContacts(ctx){
 function renderContacts(ctx){
   const el=document.getElementById(`mcl-${ctx}`);if(!el)return;
   el.innerHTML='';
-  if(!MSG.contacts.length){
-    el.innerHTML='<div style="padding:18px;text-align:center;color:var(--sub);font-size:.8rem;">Aucune conversation.<br>Recherche un utilisateur.</div>';return;
+
+  MSG.tab=MSG.tab||{};
+  const tab=MSG.tab[ctx]||'msgs';
+
+  // Sépare : msgs acceptés (ou envoyés) vs DM entrants (request et je suis le destinataire)
+  const accepted=MSG.contacts.filter(c=>c.status==='accepted'||(c.status==='request'&&c.reqFrom===CU.uid&&c.lastMsg));
+  const incoming=MSG.contacts.filter(c=>c.status==='request'&&c.reqFrom!==CU.uid);
+
+  // Mise à jour badges onglets
+  const bdgDm=document.getElementById(`bdg-dm-${ctx}`);
+  if(bdgDm){
+    const cnt=incoming.filter(c=>!c.read||(c.lastSender&&c.lastSender!==CU.uid)).length;
+    bdgDm.textContent=cnt;bdgDm.style.display=cnt>0?'inline':'none';
   }
-  MSG.contacts.forEach(c=>{
-    const ou=c.ou;const isReq=c.status==='request'&&c.reqFrom!==CU.uid;
-    const unread=c.lastSender&&c.lastSender!==CU.uid&&!c.read;
-    const d=document.createElement('div');d.className='mc'+(c.convId===MSG.cid?' on':'')+(isReq?' req':'');
-    const avEl=mkAv(ou.name,ou.photoURL,'av-sm');
-    d.innerHTML='';d.appendChild(avEl);
-    const info=document.createElement('div');info.className='mc-info';
-    info.innerHTML=`<div class="mc-name">${ou.name}</div><div class="mc-prev">${isReq?'⚠ Demande de contact':c.lastMsg||'Nouvelle conversation'}</div>`;
-    const right=document.createElement('div');right.className='mc-right';
-    right.innerHTML=`<div class="mc-time">${c.lastDate?.toDate?fmtT(c.lastDate.toDate()):''}</div>${unread?'<div class="mc-dot"></div>':''}`;
-    d.appendChild(info);d.appendChild(right);
-    d.onclick=()=>openConv(ctx,c.convId,ou,c.status,c.reqFrom);
-    el.appendChild(d);
-  });
+  const bdgMsgs=document.getElementById(`bdg-msgs-${ctx}`);
+  if(bdgMsgs){
+    const cnt=accepted.filter(c=>c.lastSender!==CU.uid&&!c.read).length;
+    bdgMsgs.textContent=cnt;bdgMsgs.style.display=cnt>0?'inline':'none';
+  }
+
+  if(tab==='msgs'){
+    if(!accepted.length){
+      el.innerHTML='<div style="padding:22px;text-align:center;color:var(--sub);font-size:.8rem;line-height:1.6;">Aucune conversation.<br>Recherche un pseudo pour commencer.</div>';return;
+    }
+    accepted.forEach(con=>{
+      const ou=con.ou;
+      const unread=con.lastSender&&con.lastSender!==CU.uid&&!con.read;
+      const d=document.createElement('div');d.className='mc'+(con.convId===MSG.cid?' on':'');
+      d.appendChild(mkAv(ou.name,ou.photoURL,'av-sm'));
+      const info=document.createElement('div');info.className='mc-info';
+      // Preview avec "Vous:" si dernier message est de moi
+      const isLastMe=con.lastSender===CU.uid;
+      const prev=con.lastMsg||'';
+      info.innerHTML=`<div class="mc-name">${ou.name}</div>
+        <div class="mc-preview-wrap">
+          ${isLastMe?`<span class="mc-preview-you">Vous :</span>`:''}
+          <span class="mc-prev" style="${unread?'font-weight:700;color:var(--text)':''}">${prev||'Nouvelle conversation'}</span>
+        </div>`;
+      const right=document.createElement('div');right.className='mc-right';
+      right.innerHTML=`<div class="mc-time">${con.lastDate?.toDate?fmtT(con.lastDate.toDate()):''}</div>${unread?'<div class="mc-dot"></div>':''}`;
+      d.appendChild(info);d.appendChild(right);
+      d.onclick=()=>openConv(ctx,con.convId,ou,con.status,con.reqFrom);
+      el.appendChild(d);
+    });
+
+  }else{
+    // Tab DM — demandes entrantes ET sortantes en attente
+    const sent=MSG.contacts.filter(c=>c.status==='request'&&c.reqFrom===CU.uid&&!c.lastMsg);
+    const allDm=[...incoming,...sent];
+    if(!allDm.length){
+      el.innerHTML=`<div class="dm-empty"><div class="dm-empty-icon">📨</div><div style="font-weight:700;margin-bottom:4px;">Aucun DM en attente</div><div style="font-size:.72rem;opacity:.6;">Les demandes non acceptées apparaissent ici</div></div>`;return;
+    }
+    if(incoming.length){
+      const sep=document.createElement('div');sep.className='msr-lbl';sep.textContent='Reçus';el.appendChild(sep);
+      incoming.forEach(con=>{
+        const ou=con.ou;
+        const hasMsg=con.lastMsg&&con.lastMsg.length>0;
+        const d=document.createElement('div');d.className='mc dm-item dm-incoming'+(con.convId===MSG.cid?' on':'');
+        d.appendChild(mkAv(ou.name,ou.photoURL,'av-sm'));
+        const info=document.createElement('div');info.className='mc-info';
+        const prevTxt=hasMsg?con.lastMsg:'veut te contacter';
+        info.innerHTML=`<div class="mc-name" style="font-weight:800;">${ou.name} <span class="dm-new-badge">Nouveau</span></div><div class="mc-preview-wrap"><span class="mc-prev" style="font-weight:${hasMsg?'600':'400'};color:${hasMsg?'var(--text)':'var(--sub)'};">${prevTxt}</span></div>`;
+        const right=document.createElement('div');right.className='mc-right';
+        right.innerHTML=`<div class="mc-time">${con.lastDate?.toDate?fmtT(con.lastDate.toDate()):''}</div><div class="mc-dot"></div>`;
+        d.appendChild(info);d.appendChild(right);
+        d.onclick=()=>openConv(ctx,con.convId,ou,con.status,con.reqFrom);
+        el.appendChild(d);
+      });
+    }
+    if(sent.length){
+      const sep=document.createElement('div');sep.className='msr-lbl';sep.style.marginTop='8px';sep.textContent='Envoyés (en attente)';el.appendChild(sep);
+      sent.forEach(con=>{
+        const ou=con.ou;
+        const d=document.createElement('div');d.className='mc'+(con.convId===MSG.cid?' on':'');
+        d.appendChild(mkAv(ou.name,ou.photoURL,'av-sm'));
+        const info=document.createElement('div');info.className='mc-info';
+        info.innerHTML=`<div class="mc-name" style="color:var(--sub)">${ou.name}</div><div class="mc-preview-wrap"><span class="mc-prev" style="color:var(--dim);">En attente d'acceptation...</span></div>`;
+        d.appendChild(info);
+        d.onclick=()=>openConv(ctx,con.convId,ou,con.status,con.reqFrom);
+        el.appendChild(d);
+      });
+    }
+  }
 }
 
 async function doSearch(ctx,q){
   const el=document.getElementById(`mcl-${ctx}`);if(!el)return;
-  el.innerHTML=`<div class="msr-lbl">Résultats pour "${q}"</div>`;
-  // Search by name using >= / <= range
-  const snap=await db.collection('users')
-    .where('name','>=',q)
-    .where('name','<=',q+'\uf8ff')
-    .limit(20).get();
-  const results=[];
-  snap.forEach(doc=>{if(doc.id!==CU.uid)results.push({...doc.data(),uid:doc.id});});
-  // Also check lowercase — some names may be lower cased
-  if(!results.length){
-    el.innerHTML+=`<div style="padding:12px 14px;color:var(--sub);font-size:.8rem;">Aucun résultat pour "${q}"</div>`;
-    return;
+  // Show loading state
+  el.innerHTML=`<div class="msr-lbl">Recherche...</div><div class="search-loading"><div class="search-dot"></div><div class="search-dot"></div><div class="search-dot"></div></div>`;
+
+  try{
+    const qLow=q.toLowerCase();
+    const qCap=q.charAt(0).toUpperCase()+q.slice(1).toLowerCase();
+    // Multi-pass: original, lowercase, capitalized
+    const queries=[
+      db.collection('users').where('name','>=',q).where('name','<=',q+'').limit(15).get(),
+      db.collection('users').where('name','>=',qLow).where('name','<=',qLow+'').limit(10).get(),
+      db.collection('users').where('name','>=',qCap).where('name','<=',qCap+'').limit(10).get(),
+    ];
+    const snaps=await Promise.all(queries);
+    const seen=new Set([CU.uid]);
+    const results=[];
+    snaps.forEach(snap=>{snap.forEach(doc=>{if(!seen.has(doc.id)){seen.add(doc.id);results.push({...doc.data(),uid:doc.id});}});});
+
+    el.innerHTML='';
+    if(!results.length){
+      el.innerHTML=`<div class="search-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div>Aucun résultat</div><div style="font-size:.72rem;opacity:.6;">Essaie un autre pseudo</div></div>`;
+      return;
+    }
+    // Header
+    const lbl=document.createElement('div');lbl.className='msr-lbl';lbl.textContent=results.length+' résultat'+(results.length>1?'s':'');
+    el.appendChild(lbl);
+    // Results with staggered animation
+    results.forEach((u,i)=>{
+      const d=document.createElement('div');d.className='msr-item';
+      d.style.cssText=`animation:srIn .22s ease forwards;animation-delay:${i*40}ms;opacity:0;`;
+      const avEl=mkAv(u.name,u.photoURL,'av-sm');d.appendChild(avEl);
+      const info=document.createElement('div');info.style.flex='1';
+      const roleLabel=u.role==='athlete'?'Athlète':u.role==='coach'?'Coach':'Admin';
+      const roleColor=RC[u.role]||'var(--sub)';
+      // Highlight matching part in name
+      const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\]/g,'\$&')})`, 'gi');
+      const hlName=u.name.replace(re,'<mark class="hl">$1</mark>');
+      info.innerHTML=`<div style="font-weight:700;font-size:.85rem;">${hlName}</div><div style="font-size:.72rem;color:${roleColor};font-weight:600;">${roleLabel}</div>`;
+      const btn=document.createElement('button');btn.className='btn btn-ghost btn-xs srch-contact-btn';btn.textContent='Contacter';
+      btn.onclick=e=>{e.stopPropagation();startConv(ctx,u);};
+      d.appendChild(info);d.appendChild(btn);
+      d.onclick=()=>startConv(ctx,u);
+      el.appendChild(d);
+    });
+  }catch(e){
+    el.innerHTML=`<div style="padding:14px;color:var(--sub);font-size:.8rem;">Erreur de recherche. Réessaye.</div>`;
   }
-  results.forEach(u=>{
-    const d=document.createElement('div');d.className='msr-item';
-    const avEl=mkAv(u.name,u.photoURL,'av-sm');
-    d.appendChild(avEl);
-    const info=document.createElement('div');info.style.flex='1';
-    info.innerHTML=`<div style="font-weight:700;font-size:.84rem;">${u.name}</div><div style="font-size:.72rem;color:var(--sub);">${u.role}</div>`;
-    const btn=document.createElement('button');btn.className='btn btn-ghost btn-xs';btn.textContent='Contacter';
-    btn.onclick=e=>{e.stopPropagation();startConv(ctx,u);};
-    d.appendChild(info);d.appendChild(btn);
-    d.onclick=()=>startConv(ctx,u);
-    el.appendChild(d);
-  });
 }
 
 async function startConv(ctx,ou){
   const cid=convId(CU.uid,ou.uid);
-  // Check if chat doc exists
-  const doc=await db.collection('chats').doc(cid).get();
-  if(!doc.exists){
+  const docSnap=await db.collection('chats').doc(cid).get();
+  let status='request',reqFrom=CU.uid;
+  if(!docSnap.exists){
+    // Créer la conv avec statut 'request' — le destinataire doit accepter
     await db.collection('chats').doc(cid).set({
       p1:CU.uid,p2:ou.uid,
       lastMsg:'',lastDate:firebase.firestore.FieldValue.serverTimestamp(),
       lastSender:CU.uid,read:false,status:'request',reqFrom:CU.uid
     });
-    wLog('modify',`Nouvelle conv: ${CU.name} → ${ou.name}`);
+    wLog('modify',`Nouveau DM: ${CU.name} → ${ou.name}`);
+  }else{
+    status=docSnap.data().status||'request';
+    reqFrom=docSnap.data().reqFrom||CU.uid;
   }
   // Clear search
-  document.getElementById(`ms-${ctx}`).value='';
-  renderContacts(ctx);
-  openConv(ctx,cid,ou,doc.exists?doc.data().status:'request',doc.exists?doc.data().reqFrom:CU.uid);
+  const sinp=document.getElementById(`ms-${ctx}`);if(sinp)sinp.value='';
+  // Switch tab selon statut
+  MSG.tab=MSG.tab||{};
+  if(status==='accepted')MSG.tab[ctx]='msgs';
+  else MSG.tab[ctx]='dm';
+  switchMsgTab(ctx,MSG.tab[ctx]);
+  setTimeout(()=>openConv(ctx,cid,ou,status,reqFrom),50);
 }
 
 function openConv(ctx,cid,ou,status,reqFrom){
   MSG.cid=cid;MSG.cUser=ou;
+  if(MSG.msub){MSG.msub();MSG.msub=null;}
+  if(MSG.csub){MSG.csub();MSG.csub=null;}
   const right=document.getElementById(`mr-${ctx}`);if(!right)return;
   const rc=RC[ou.role]||'var(--text)';
-  const canSend=status==='accepted'||status===undefined||status===null||reqFrom===CU.uid;
   right.innerHTML='';
-  // Head
+
+  // ── HEAD ──
   const head=document.createElement('div');head.className='chat-head';
   head.appendChild(mkAv(ou.name,ou.photoURL,'av-sm'));
   const headInfo=document.createElement('div');headInfo.style.flex='1';
   headInfo.innerHTML=`<div class="chat-head-name" style="color:${rc}" onclick="viewProf('${ou.uid}')">${ou.name}</div><span class="rb rb-${ou.role||'athlete'}" style="font-size:.6rem">${(ou.role||'').toUpperCase()}</span>`;
   head.appendChild(headInfo);
-  // Back button on mobile
-  const backBtn=document.createElement('button');backBtn.className='btn btn-ghost btn-xs mob-back';backBtn.innerHTML=I.back+' Retour';backBtn.onclick=()=>{
-    const shell=document.getElementById(`mshell-${ctx}`);
-    if(shell)shell.classList.remove('conv-open');
-    right.innerHTML=`<div class="msg-empty">${I.msgs}<div style="font-weight:700;font-size:.92rem;">Sélectionner une conversation</div></div>`;
-  };
+  const backBtn=document.createElement('button');backBtn.className='btn btn-ghost btn-xs mob-back';backBtn.innerHTML=I.back+' Retour';
+  backBtn.onclick=()=>{const sh=document.getElementById(`mshell-${ctx}`);if(sh)sh.classList.remove('conv-open');right.innerHTML=`<div class="msg-empty">${I.msgs}<div style="font-weight:700;font-size:.92rem;">Sélectionner une conversation</div></div>`;};
   head.appendChild(backBtn);
   const profBtn=document.createElement('button');profBtn.className='btn btn-ghost btn-xs';profBtn.innerHTML=I.prof+' Profil';profBtn.onclick=()=>viewProf(ou.uid);
   head.appendChild(profBtn);
   right.appendChild(head);
-  // Request banner
-  if(status==='request'&&reqFrom!==CU.uid){
-    const bar=document.createElement('div');bar.className='req-bar';
-    bar.innerHTML=`<span>${ou.name} souhaite vous contacter</span><div style="display:flex;gap:7px"><button class="btn btn-g btn-xs" onclick="accReq('${cid}','${ctx}')">${I.ok} Accepter</button><button class="btn btn-r btn-xs" onclick="refReq('${cid}','${ctx}')">Refuser</button></div>`;
-    right.appendChild(bar);
-  } else if(status==='request'&&reqFrom===CU.uid){
-    const bar=document.createElement('div');bar.className='req-bar';bar.style.cssText='background:rgba(96,165,250,.09);color:var(--blue);border-color:rgba(96,165,250,.18);';
-    bar.textContent='En attente d\'acceptation...';right.appendChild(bar);
-  }
-  // Messages container
-  const msgs=document.createElement('div');msgs.className='chat-msgs';msgs.id=`cm-${ctx}`;right.appendChild(msgs);
-  // Input row
-  if(canSend){
-    const inpRow=document.createElement('div');inpRow.className='chat-inp-row';
-    const inp=document.createElement('input');inp.type='text';inp.className='chat-inp';inp.id=`ci-${ctx}`;inp.placeholder='Aa';inp.onkeypress=e=>{if(e.key==='Enter')sendM(ctx,cid);};
-    const snd=document.createElement('button');snd.className='chat-send-btn';snd.innerHTML=I.send;snd.onclick=()=>sendM(ctx,cid);
-    inpRow.appendChild(inp);inpRow.appendChild(snd);right.appendChild(inpRow);
-  }
-  // Hide left panel on mobile after selecting
-  const leftPanel=document.getElementById(`ml-${ctx}`);
-  const shell=document.getElementById(`mshell-${ctx}`);
-  if(window.innerWidth<=900){
-    leftPanel.classList.remove('show-mob');
-    if(shell)shell.classList.add('conv-open');
-  }
 
-  if(MSG.msub){MSG.msub();MSG.msub=null;}
+  // ── ZONE BANNIÈRE DYNAMIQUE (mise à jour par listener) ──
+  const bannerZone=document.createElement('div');bannerZone.id=`req-banner-${ctx}`;right.appendChild(bannerZone);
+
+  // ── MESSAGES ──
+  const msgsEl=document.createElement('div');msgsEl.className='chat-msgs';msgsEl.id=`cm-${ctx}`;right.appendChild(msgsEl);
+
+  // ── INPUT — toujours visible (l'expéditeur peut toujours écrire) ──
+  const inpRow=document.createElement('div');inpRow.className='chat-inp-row';
+  const inp=document.createElement('input');inp.type='text';inp.className='chat-inp';inp.id=`ci-${ctx}`;inp.placeholder='Écrire un message...';
+  inp.onkeypress=e=>{if(e.key==='Enter')sendM(ctx,cid);};
+  const snd=document.createElement('button');snd.className='chat-send-btn';snd.innerHTML=I.send;snd.onclick=()=>sendM(ctx,cid);
+  inpRow.appendChild(inp);inpRow.appendChild(snd);right.appendChild(inpRow);
+
+  // ── MOBILE ──
+  const shell=document.getElementById(`mshell-${ctx}`);
+  if(window.innerWidth<=900&&shell)shell.classList.add('conv-open');
+
+  // ── LISTENER STATUT CHAT (bannière dynamique en temps réel) ──
+  MSG.csub=db.collection('chats').doc(cid).onSnapshot(snap=>{
+    if(!snap.exists)return;
+    const d=snap.data();
+    const banner=document.getElementById(`req-banner-${ctx}`);if(!banner)return;
+    banner.innerHTML='';
+    if(d.status==='request'&&d.reqFrom!==CU.uid){
+      // Je suis le destinataire
+      const bar=document.createElement('div');bar.className='req-bar req-bar-incoming';
+      bar.innerHTML=`<div class="req-bar-info">${I.msgs}<div><div class="req-bar-name">${ou.name} souhaite te contacter</div><div class="req-bar-sub">Lis ses messages, puis accepte ou refuse</div></div></div><div class="req-bar-acts"><button class="btn btn-g btn-sm req-acc-btn" onclick="accReq('${cid}','${ctx}')">${I.ok} Accepter</button><button class="btn btn-r btn-xs" onclick="refReq('${cid}','${ctx}')">Refuser</button></div>`;
+      banner.appendChild(bar);
+    } else if(d.status==='request'&&d.reqFrom===CU.uid){
+      // Je suis l'expéditeur
+      const bar=document.createElement('div');bar.className='req-bar req-bar-pending';
+      bar.innerHTML=`<span class="req-pend-icon">⏳</span><div><div style="font-weight:700;font-size:.82rem;">En attente</div><div style="font-size:.72rem;opacity:.7;">${ou.name} n'a pas encore accepté</div></div>`;
+      banner.appendChild(bar);
+    }
+    // Si accepted → zone vide (conversation normale)
+  });
+  SB.push(MSG.csub);
+
+  // ── LISTENER MESSAGES (temps réel, scroll intelligent) ──
   MSG.msub=db.collection('chats').doc(cid).collection('msgs').orderBy('date','asc').onSnapshot(snap=>{
     const box=document.getElementById(`cm-${ctx}`);if(!box)return;
+    const wasAtBottom=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+    const prevCount=parseInt(box.dataset.count||'-1');
+    box.dataset.count=snap.size;
+    if(snap.size===prevCount)return; // rien de nouveau
+    // Re-render complet (simple et fiable)
     box.innerHTML='';
+    let lastDateStr='';
     snap.forEach(doc=>{
       const m=doc.data();const isMe=m.sender===CU.uid;
-      const row=document.createElement('div');row.className='brow '+(isMe?'me':'');
-      if(!isMe){row.appendChild(mkAv(ou.name,ou.photoURL,'av-xs'));}
-      const bub=document.createElement('div');bub.className='bub '+(isMe?'me':'them');bub.textContent=m.text;
+      const dt=m.date?.toDate?m.date.toDate().toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'}):null;
+      if(dt&&dt!==lastDateStr){
+        lastDateStr=dt;
+        const ds=document.createElement('div');ds.className='chat-date-sep';ds.textContent=dt;box.appendChild(ds);
+      }
+      const row=document.createElement('div');row.className='brow '+(isMe?'me':'them');
+      if(!isMe)row.appendChild(mkAv(ou.name,ou.photoURL,'av-xs'));
+      const bub=document.createElement('div');bub.className='bub '+(isMe?'me':'them');
+      bub.textContent=m.text;
       const bt=document.createElement('div');bt.className='bt';bt.textContent=m.date?.toDate?fmtT(m.date.toDate()):'';
       bub.appendChild(bt);row.appendChild(bub);box.appendChild(row);
     });
-    box.scrollTop=box.scrollHeight;
+    if(wasAtBottom||prevCount<0)box.scrollTop=box.scrollHeight;
     db.collection('chats').doc(cid).update({read:true}).catch(()=>{});
   });
   SB.push(MSG.msub);
@@ -1446,18 +2032,39 @@ function openConv(ctx,cid,ou,status,reqFrom){
 }
 
 async function sendM(ctx,cid){
-  const inp=document.getElementById(`ci-${ctx}`);const txt=inp?.value.trim();if(!txt)return;inp.value='';
-  await db.collection('chats').doc(cid).collection('msgs').add({text:txt,sender:CU.uid,date:firebase.firestore.FieldValue.serverTimestamp()});
-  await db.collection('chats').doc(cid).update({lastMsg:txt,lastDate:firebase.firestore.FieldValue.serverTimestamp(),lastSender:CU.uid,read:false,status:'accepted'});
+  const inp=document.getElementById(`ci-${ctx}`);const txt=inp?.value.trim();if(!txt)return;
+  inp.value='';
+  // Envoyer le message (visible en temps réel par les deux via onSnapshot)
+  await db.collection('chats').doc(cid).collection('msgs').add({
+    text:txt,sender:CU.uid,date:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  // Mettre à jour les métadonnées (ne PAS changer le statut — le destinataire choisit d'accepter)
+  await db.collection('chats').doc(cid).update({
+    lastMsg:txt,
+    lastDate:firebase.firestore.FieldValue.serverTimestamp(),
+    lastSender:CU.uid,
+    read:false
+  });
 }
 
 async function accReq(cid,ctx){
-  await db.collection('chats').doc(cid).update({status:'accepted'});toast('Demande acceptée');
-  const c=MSG.contacts.find(x=>x.convId===cid);if(c)openConv(ctx,cid,c.ou,'accepted',c.reqFrom);
+  await db.collection('chats').doc(cid).update({status:'accepted',read:true});
+  // Le listener csub va automatiquement cacher la bannière
+  MSG.tab=MSG.tab||{};MSG.tab[ctx]='msgs';
+  switchMsgTab(ctx,'msgs');
+  toast('Contact accepté ✓');
 }
 async function refReq(cid,ctx){
-  await db.collection('chats').doc(cid).delete();MSG.cid=null;
-  const r=document.getElementById(`mr-${ctx}`);r.innerHTML=`<div class="msg-empty">${I.msgs}<div style="font-weight:700">Demande refusée</div></div>`;toast('Demande refusée');
+  await db.collection('chats').doc(cid).delete();
+  MSG.cid=null;
+  if(MSG.msub){MSG.msub();MSG.msub=null;}
+  if(MSG.csub){MSG.csub();MSG.csub=null;}
+  const r=document.getElementById(`mr-${ctx}`);
+  r.innerHTML=`<div class="msg-empty">${I.msgs}<div style="font-weight:700;margin-top:8px;">Demande refusée</div></div>`;
+  // Basculer onglet
+  MSG.tab=MSG.tab||{};MSG.tab[ctx]='msgs';
+  switchMsgTab(ctx,'msgs');
+  toast('Demande refusée');
 }
 
 let _prevPage=null;
@@ -1486,18 +2093,67 @@ function fmtT(d){if(!d)return'';const n=new Date(),df=(n-d)/1000;if(df<60)return
    ATHLETE SETTINGS
 ═══════════════════════════════════════════ */
 function loadAthSet(){
+  const linked=document.getElementById('clinked');
+  const btnU=document.getElementById('btnu');
   if(CU.coachId){
-    document.getElementById('clinked').style.display='block';
-    db.collection('users').doc(CU.coachId).get().then(s=>{if(s.exists)document.getElementById('clinked').innerHTML=`${I.ok} Lié à <b>${s.data().name}</b>`;});
-    document.getElementById('btnu').style.display='inline-flex';
+    // Déjà lié
+    if(linked)linked.style.display='block';
+    db.collection('users').doc(CU.coachId).get().then(s=>{
+      if(s.exists&&linked)linked.innerHTML=`<span style="color:var(--green);">${I.ok}</span> Lié à <b>${s.data().name}</b>`;
+    });
+    if(btnU)btnU.style.display='inline-flex';
+    // Masquer zone code
+    const pz=document.getElementById('pair-zone');if(pz)pz.style.display='none';
+  } else {
+    // Pas encore lié — vérifier si demande en attente
+    if(linked)linked.style.display='none';
+    if(btnU)btnU.style.display='none';
+    db.collection('coach_requests').doc(CU.uid).get().then(snap=>{
+      const pz=document.getElementById('pair-zone');
+      const pw=document.getElementById('pending-wrap');
+      if(snap.exists&&snap.data().status==='pending'){
+        // Demande envoyée, en attente
+        if(pz)pz.style.display='none';
+        if(pw){
+          pw.style.display='block';
+          db.collection('users').doc(snap.data().coachId).get().then(cs=>{
+            pw.innerHTML=`<div class="pending-req-card"><div class="pending-req-icon">⏳</div><div><div style="font-weight:700;font-size:.88rem;">En attente d'acceptation</div><div style="font-size:.76rem;color:var(--sub);margin-top:3px;">Demande envoyée à <b>${cs.exists?cs.data().name:'un coach'}</b></div></div><button class="btn btn-r btn-xs" onclick="cancelLinkReq()">Annuler</button></div>`;
+          });
+        }
+      } else {
+        if(pz)pz.style.display='block';
+        if(pw)pw.style.display='none';
+      }
+    });
   }
 }
+async function cancelLinkReq(){
+  await db.collection('coach_requests').doc(CU.uid).delete();
+  toast('Demande annulée');loadAthSet();
+}
 async function linkCoach(){
-  const code=document.getElementById('pinp').value.trim().toUpperCase();if(code.length<6){toast('Code invalide');return;}
-  const snap=await db.collection('pairing_codes').doc(code).get();if(!snap.exists){toast('Code invalide ou expiré');return;}
-  const d=snap.data();if(d.expiresAt&&Date.now()>d.expiresAt){toast('Code expiré');return;}
-  await db.collection('users').doc(CU.uid).update({coachId:d.coachId});CU.coachId=d.coachId;
-  wLog('liaison',`Liaison: ${CU.name}`);toast('Coach lié !');loadAthSet();
+  const code=document.getElementById('pinp').value.trim().toUpperCase();
+  if(code.length<6){toast('Code invalide');return;}
+  const snap=await db.collection('pairing_codes').doc(code).get();
+  if(!snap.exists){toast('Code invalide ou expiré');return;}
+  const d=snap.data();
+  if(d.expiresAt&&Date.now()>d.expiresAt){toast('Code expiré');return;}
+  // Vérifier si l'athlète a déjà une demande en attente pour ce coach
+  const existReq=await db.collection('coach_requests').doc(CU.uid).get();
+  if(existReq.exists&&existReq.data().status==='pending'){toast('Demande déjà envoyée, en attente du coach');return;}
+  // Créer la demande de liaison (pas encore lié — le coach doit accepter)
+  await db.collection('coach_requests').doc(CU.uid).set({
+    athleteId:CU.uid,
+    athleteName:CU.name,
+    athleteLevel:CU.level||'Loisir',
+    coachId:d.coachId,
+    status:'pending',
+    requestedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('pinp').value='';
+  wLog('liaison',`Demande liaison: ${CU.name}`);
+  toast('Demande envoyée ! En attente d'acceptation du coach 🕐');
+  loadAthSet();
 }
 async function doUnlinkCoach(){await db.collection('users').doc(CU.uid).update({coachId:null});CU.coachId=null;document.getElementById('clinked').style.display='none';document.getElementById('btnu').style.display='none';wLog('liaison',`Dissocié: ${CU.name}`);toast('Coach dissocié');}
 async function loadCNote(){if(!CU.coachId)return;const s=await db.collection('coachNotes').doc(CU.uid).get();if(s.exists&&s.data().content){document.getElementById('notecard').style.display='block';document.getElementById('notebox').textContent=s.data().content;}}
@@ -1506,6 +2162,48 @@ async function loadCNote(){if(!CU.coachId)return;const s=await db.collection('co
    COACH ATHLETES
 ═══════════════════════════════════════════ */
 let selAth=null;
+
+/* ─── DEMANDES DE LIAISON (coach) ─────────────── */
+function listenLiaisonRequests(){
+  const q=db.collection('coach_requests').where('coachId','==',CU.uid).where('status','==','pending');
+  const u=q.onSnapshot(async snap=>{
+    const wrap=document.getElementById('liaison-requests-wrap');
+    if(!wrap)return;
+    if(snap.empty){wrap.style.display='none';return;}
+    wrap.style.display='block';
+    wrap.innerHTML='<div class="ctitle" style="margin-bottom:10px;">Demandes de liaison <span class="tab-bdg" style="display:inline;">'+snap.size+'</span></div>';
+    const ps=snap.docs.map(async doc=>{
+      const d=doc.data();
+      const us=await db.collection('users').doc(d.athleteId).get();
+      const aData=us.exists?us.data():{name:d.athleteName||'Athlète',level:d.athleteLevel||'?'};
+      const card=document.createElement('div');card.className='liaison-req-card';
+      card.style.cssText='display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--g1);border:1px solid rgba(59,111,240,.25);border-radius:var(--r-lg);margin-bottom:8px;';
+      card.appendChild(mkAv(aData.name,aData.photoURL,'av-sm'));
+      const info=document.createElement('div');info.style.flex='1';
+      info.innerHTML=`<div style="font-weight:700;font-size:.88rem;color:var(--blue);">${aData.name}</div><div style="font-size:.72rem;color:var(--sub);">${aData.level||'Loisir'} · demande d'accès</div>`;
+      const acts=document.createElement('div');acts.style.cssText='display:flex;gap:7px;flex-shrink:0;';
+      const accBtn=document.createElement('button');accBtn.className='btn btn-g btn-sm';accBtn.innerHTML=I.ok+' Accepter';
+      accBtn.onclick=async()=>{
+        await db.collection('users').doc(d.athleteId).update({coachId:CU.uid});
+        await db.collection('coach_requests').doc(d.athleteId).update({status:'accepted'});
+        wLog('liaison',`Liaison acceptée: ${aData.name}`);toast('Athlète accepté ✓');
+      };
+      const refBtn=document.createElement('button');refBtn.className='btn btn-r btn-xs';refBtn.textContent='Refuser';
+      refBtn.onclick=async()=>{
+        await db.collection('coach_requests').doc(d.athleteId).update({status:'refused'});
+        wLog('liaison',`Liaison refusée: ${aData.name}`);toast('Demande refusée');
+      };
+      acts.appendChild(accBtn);acts.appendChild(refBtn);
+      card.appendChild(info);card.appendChild(acts);wrap.appendChild(card);
+    });
+    await Promise.all(ps);
+    // Badge sur nav sidebar liaison
+    const badge=document.getElementById('liaison-badge');
+    if(badge){badge.textContent=snap.size;badge.style.display=snap.size>0?'inline':'none';}
+  });
+  SB.push(u);
+}
+
 function listenCAths(){
   const u=db.collection('users').where('coachId','==',CU.uid).onSnapshot(snap=>{
     const el=document.getElementById('cathlist');if(!el)return;
@@ -1557,7 +2255,16 @@ async function openAthD(uid){
   hero.appendChild(heroInfo);body.appendChild(hero);
   // Rest as HTML (no DOM elements needed)
   body.insertAdjacentHTML('beforeend',`
-    <div class="fg"><label class="fl">Niveau</label><select id="al-l" class="fi"><option ${selAth.level==='Loisir'?'selected':''}>Loisir</option><option ${selAth.level==='Compétition'?'selected':''}>Compétition</option><option ${selAth.level==='Elite'?'selected':''}>Elite</option></select><button class="btn btn-g btn-sm" style="margin-top:6px" onclick="saveAL()">${I.ok} Enregistrer niveau</button></div>
+    <div class="fg">
+      <label class="fl">Niveau</label>
+      <div class="level-picker">
+        <button type="button" class="level-pill${selAth.level==='Loisir'||!selAth.level?' on':''}" onclick="pickAthLevel(this,'Loisir')"><span>Loisir</span></button>
+        <button type="button" class="level-pill${selAth.level==='Compétition'?' on':''}" onclick="pickAthLevel(this,'Compétition')"><span>Compétition</span></button>
+        <button type="button" class="level-pill${selAth.level==='Elite'?' on':''}" onclick="pickAthLevel(this,'Elite')"><span>Elite</span></button>
+      </div>
+      <input type="hidden" id="al-l" value="${selAth.level||'Loisir'}">
+      <button class="btn btn-g btn-sm" style="margin-top:10px" onclick="saveAL()">${I.ok} Enregistrer niveau</button>
+    </div>
     <div class="sep"></div>
     <div class="ctitle">Temps de réaction</div>
     <div class="spark-row" style="margin-bottom:14px">${spk||'<div style="color:var(--sub);font-size:.76rem;">Pas de données</div>'}</div>
@@ -1570,6 +2277,11 @@ async function openAthD(uid){
     <div class="sep"></div>
     <button class="btn btn-r btn-xs" onclick="askConf('dissoc-ath')">Dissocier cet athlète</button>`);
   oM('m-ath');
+}
+function pickAthLevel(btn,val){
+  btn.closest('.level-picker').querySelectorAll('.level-pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('al-l').value=val;
 }
 async function saveAL(){if(!selAth)return;const l=document.getElementById('al-l').value;await db.collection('users').doc(selAth.uid).update({level:l});toast('Niveau mis à jour');wLog('modify',`Niveau ${selAth.name}: ${l}`);}
 async function saveCN(){if(!selAth)return;const c=document.getElementById('cn-t').value;await db.collection('coachNotes').doc(selAth.uid).set({coachId:CU.uid,content:c,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});wLog('modify',`Note: ${selAth.name}`);toast('Note sauvegardée');}
