@@ -1621,42 +1621,373 @@ function hPhoto(e){
   const r=new FileReader();r.onload=async ev=>{const b64=ev.target.result;await db.collection('users').doc(CU.uid).update({photoURL:b64});CU.photoURL=b64;if(CU.role==='athlete')buildAthProf();else if(CU.role==='coach')buildCoaProf();const av=document.getElementById('sbav');av.innerHTML='';const i=document.createElement('img');i.src=b64;av.appendChild(i);toast('Photo mise à jour');};r.readAsDataURL(f);e.target.value='';
 }
 
-/* ═══════════════════════════════════════════
-   TRAINING STATE MACHINE
-═══════════════════════════════════════════ */
-let tSt='IDLE',tBip=null,tLift=null,rafId=null;
-function startSeq(){
-  if(tSt!=='IDLE')return;tSt='WAIT';
-  document.getElementById('trcfg').style.display='none';document.getElementById('trrun').style.display='block';document.getElementById('trres').style.display='none';document.getElementById('trbtns').style.display='none';document.getElementById('falsemsg').style.display='none';
-  setSP('WAIT','Concentration...');
-  const conc=parseInt(document.getElementById('slc').value)*1000;
-  setTimeout(()=>{
-    tSt='ALEA';setSP('ALEA','Prêt...');
-    const d=1000+Math.random()*4000;
-    setTimeout(()=>{
-      if(tSt!=='ALEA')return;
-      playBip();tBip=performance.now();tSt='BIP';setSP('BIP','Partez !');document.getElementById('trbtns').style.display='block';
-      (function tick(){if(tSt!=='BIP')return;document.getElementById('rv').textContent=((performance.now()-tBip)/1000).toFixed(3);rafId=requestAnimationFrame(tick);})();
-    },d);
-  },conc);
-}
-function doLift(){
-  if(tSt==='WAIT'||tSt==='ALEA'){cancelAnimationFrame(rafId);tSt='IDLE';document.getElementById('falsemsg').style.display='block';setSP('FALSE','Faux départ');playFBip();setTimeout(resetTr,2500);return;}
-  if(tSt!=='BIP')return;cancelAnimationFrame(rafId);tLift=performance.now();document.getElementById('rv').textContent=((tLift-tBip)/1000).toFixed(3);document.getElementById('rv').style.opacity='.5';tSt='RUN';setSP('RUN','En course');
-  (function tick(){if(tSt!=='RUN')return;document.getElementById('cv').textContent=((performance.now()-tLift)/1000).toFixed(2);rafId=requestAnimationFrame(tick);})();
-}
-async function doFinish(){
-  if(tSt!=='RUN')return;cancelAnimationFrame(rafId);
-  const tE=performance.now(),react=(tLift-tBip)/1000,course=(tE-tLift)/1000,dist=parseInt(document.getElementById('sld').value),kmh=((dist/course)*3.6).toFixed(1);tSt='END';
-  document.getElementById('rr-react').textContent=react.toFixed(3)+'s';document.getElementById('rr-time').textContent=course.toFixed(2)+'s';document.getElementById('rr-kmh').textContent=kmh;document.getElementById('rr-dist').textContent=dist;
-  document.getElementById('trrun').style.display='none';document.getElementById('trres').style.display='block';
-  const nm='Session '+new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
-  await db.collection('history').add({uid:CU.uid,name:nm,react:parseFloat(react.toFixed(3)),time:parseFloat(course.toFixed(2)),distance:dist,speed:parseFloat(kmh),date:firebase.firestore.FieldValue.serverTimestamp()});
-  wLog('session',`Session: ${course.toFixed(2)}s react:${react.toFixed(3)}s`);
-}
-function resetTr(){tSt='IDLE';cancelAnimationFrame(rafId);document.getElementById('trcfg').style.display='block';document.getElementById('trrun').style.display='none';document.getElementById('trres').style.display='none';document.getElementById('cv').textContent='0.00';document.getElementById('rv').textContent='0.000';document.getElementById('rv').style.opacity='1';document.getElementById('falsemsg').style.display='none';}
-function setSP(s,lbl){const el=document.getElementById('spill');el.textContent=lbl;el.className='sp';const m={WAIT:'sp-wait',ALEA:'sp-alea',BIP:'sp-bip',RUN:'sp-run',FALSE:'sp-false'};el.classList.add(m[s]||'sp-idle');}
+ /*
+ ╔══════════════════════════════════════════════════════════╗
+ ║     StartGo Pro — Patch BLE (Web Bluetooth API)          ║
+ ║                                                          ║
+ ║  COMMENT INTÉGRER :                                      ║
+ ║  Remplace le bloc                                        ║
+ ║    /* ═══ TRAINING STATE MACHINE ═══ * /                 ║
+ ║  dans ton HTML par ce fichier complet.                   ║
+ ║                                                          ║
+ ║  Ou colle le bloc BLE_LAYER juste avant </script>        ║
+ ║  et remplace startSeq() / resetTr() par les versions     ║
+ ║  ci-dessous.                                             ║
+ ╚══════════════════════════════════════════════════════════╝
+*/
 
+/* ═══════════════════════════════════════════════════════════
+   BLE LAYER — colle ce bloc dans ton <script> existant
+═══════════════════════════════════════════════════════════ */
+const BLE = {
+  // UUIDs — doivent correspondre exactement au .ino
+  SERVICE:  '4fafc201-1fb5-459e-8fcc-c5c9c331914b',
+  CMD:      'beb5483e-36e1-4688-b7f5-ea07361b26a8',  // Write
+  EVT:      '1c95d5e3-d8f7-413a-bf3d-7a2e5d7be87e',  // Notify
+
+  device:   null,
+  server:   null,
+  cmdChar:  null,
+  evtChar:  null,
+  connected: false,
+
+  // ── Connexion ──────────────────────────────────────────
+  async connect() {
+    if (!navigator.bluetooth) {
+      toast('Web Bluetooth non supporté sur ce navigateur');
+      return false;
+    }
+    try {
+      BLE.device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: 'StartGo-Pro' }],
+        optionalServices: [BLE.SERVICE]
+      });
+      BLE.device.addEventListener('gattserverdisconnected', BLE.onDisconnect);
+
+      BLE.server  = await BLE.device.gatt.connect();
+      const svc   = await BLE.server.getPrimaryService(BLE.SERVICE);
+      BLE.cmdChar = await svc.getCharacteristic(BLE.CMD);
+      BLE.evtChar = await svc.getCharacteristic(BLE.EVT);
+
+      // Activer les notifications de l'ESP32 → app
+      await BLE.evtChar.startNotifications();
+      BLE.evtChar.addEventListener('characteristicvaluechanged', BLE.onEvent);
+
+      BLE.connected = true;
+      BLE._updateBtn();
+      toast('ESP32 connecté ✓ — Mode physique actif');
+      return true;
+    } catch (e) {
+      if (e.name !== 'NotFoundError') toast('Connexion BLE échouée : ' + e.message);
+      return false;
+    }
+  },
+
+  // ── Déconnexion ────────────────────────────────────────
+  disconnect() {
+    if (BLE.device?.gatt?.connected) BLE.device.gatt.disconnect();
+  },
+
+  onDisconnect() {
+    BLE.connected = false;
+    BLE.cmdChar = BLE.evtChar = null;
+    BLE._updateBtn();
+    toast('ESP32 déconnecté — retour mode simulation');
+    // Remet l'UI en état propre si une séquence était en cours
+    if (tSt !== 'IDLE') resetTr();
+  },
+
+  // ── Envoi commande vers ESP32 ──────────────────────────
+  async send(msg) {
+    if (!BLE.connected || !BLE.cmdChar) return;
+    const enc = new TextEncoder().encode(msg);
+    await BLE.cmdChar.writeValueWithoutResponse(enc);
+  },
+
+  // ── Réception événements depuis ESP32 ─────────────────
+  onEvent(e) {
+    const msg = new TextDecoder().decode(e.target.value);
+    console.log('[BLE ←]', msg);
+
+    if (msg === 'CONNECTED') {
+      // Déjà géré dans connect()
+      return;
+    }
+
+    if (msg === 'PHASE:WAIT') {
+      // L'ESP32 confirme le démarrage — on met à jour le statut
+      setSP('WAIT', 'Concentration...');
+      return;
+    }
+
+    if (msg === 'PHASE:ALEA') {
+      setSP('ALEA', 'Prêt...');
+      return;
+    }
+
+    if (msg.startsWith('BIP:')) {
+      // L'ESP32 indique l'heure exacte du bip (millis ESP32)
+      // On utilise performance.now() côté JS comme référence locale
+      tBip = performance.now();
+      tSt = 'BIP';
+      setSP('BIP', 'Partez !');
+      document.getElementById('trbtns').style.display = 'block';
+      // Lance l'affichage du chrono réaction
+      (function tick() {
+        if (tSt !== 'BIP') return;
+        document.getElementById('rv').textContent =
+          ((performance.now() - tBip) / 1000).toFixed(3);
+        rafId = requestAnimationFrame(tick);
+      })();
+      return;
+    }
+
+    if (msg === 'ABORTED') {
+      resetTr();
+      return;
+    }
+
+    if (msg === 'ERR:BUSY') {
+      toast('ESP32 occupé — attends la fin de la séquence');
+      return;
+    }
+  },
+
+  // ── Bouton connect dans l'UI ───────────────────────────
+  _updateBtn() {
+    const btn = document.getElementById('ble-btn');
+    if (!btn) return;
+    if (BLE.connected) {
+      btn.textContent = '● ESP32 connecté';
+      btn.style.background = 'var(--green-bg)';
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'rgba(15,168,110,.3)';
+      btn.onclick = () => { BLE.disconnect(); };
+    } else {
+      btn.textContent = 'Connecter ESP32';
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+      btn.onclick = () => BLE.connect();
+    }
+  }
+};
+
+
+/* ═══════════════════════════════════════════════════════════
+   TRAINING STATE MACHINE (version BLE + fallback simulation)
+   Remplace entièrement le bloc existant dans ton HTML
+═══════════════════════════════════════════════════════════ */
+let tSt='IDLE', tBip=null, tLift=null, rafId=null;
+
+// ── Injection du bouton BLE dans la page entraînement ──────
+// Appelé une fois au chargement de la page training
+function _injectBleBtn() {
+  const cfg = document.getElementById('trcfg');
+  if (!cfg || document.getElementById('ble-btn')) return;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;';
+
+  const btn = document.createElement('button');
+  btn.id = 'ble-btn';
+  btn.className = 'btn btn-ghost btn-sm';
+  btn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14">
+      <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
+    </svg>
+    Connecter ESP32`;
+  btn.onclick = () => BLE.connect();
+
+  const lbl = document.createElement('span');
+  lbl.style.cssText = 'font-size:.7rem;color:var(--sub);';
+  lbl.id = 'ble-mode-lbl';
+  lbl.textContent = 'Mode simulation';
+
+  wrap.appendChild(btn);
+  wrap.appendChild(lbl);
+  cfg.insertBefore(wrap, cfg.firstChild);
+}
+
+// Met à jour le label de mode
+function _setBleModeLbl() {
+  const lbl = document.getElementById('ble-mode-lbl');
+  if (!lbl) return;
+  lbl.textContent = BLE.connected ? 'Mode physique (BLE)' : 'Mode simulation';
+  lbl.style.color = BLE.connected ? 'var(--green)' : 'var(--sub)';
+}
+
+// ── Démarrage de séquence ──────────────────────────────────
+async function startSeq() {
+  if (tSt !== 'IDLE') return;
+
+  document.getElementById('trcfg').style.display = 'none';
+  document.getElementById('trrun').style.display = 'block';
+  document.getElementById('trres').style.display = 'none';
+  document.getElementById('trbtns').style.display = 'none';
+  document.getElementById('falsemsg').style.display = 'none';
+
+  if (BLE.connected) {
+    // ── MODE PHYSIQUE : l'ESP32 gère la séquence ────────────
+    tSt = 'WAIT';
+    setSP('WAIT', 'Connexion ESP32...');
+    const conc = document.getElementById('slc').value;
+    await BLE.send('START:' + conc);
+    // La suite est déclenchée par BLE.onEvent → 'BIP:...'
+
+  } else {
+    // ── MODE SIMULATION : séquence JS locale ────────────────
+    tSt = 'WAIT';
+    setSP('WAIT', 'Concentration...');
+    const conc = parseInt(document.getElementById('slc').value) * 1000;
+    setTimeout(() => {
+      if (tSt !== 'WAIT') return;
+      tSt = 'ALEA'; setSP('ALEA', 'Prêt...');
+      const d = 1000 + Math.random() * 4000;
+      setTimeout(() => {
+        if (tSt !== 'ALEA') return;
+        playBip();
+        tBip = performance.now();
+        tSt = 'BIP'; setSP('BIP', 'Partez !');
+        document.getElementById('trbtns').style.display = 'block';
+        (function tick() {
+          if (tSt !== 'BIP') return;
+          document.getElementById('rv').textContent =
+            ((performance.now() - tBip) / 1000).toFixed(3);
+          rafId = requestAnimationFrame(tick);
+        })();
+      }, d);
+    }, conc);
+  }
+}
+
+// ── Pied levé ──────────────────────────────────────────────
+function doLift() {
+  if (tSt === 'WAIT' || tSt === 'ALEA') {
+    // Faux départ
+    cancelAnimationFrame(rafId);
+    tSt = 'IDLE';
+    document.getElementById('falsemsg').style.display = 'block';
+    setSP('FALSE', 'Faux départ');
+    if (BLE.connected) {
+      BLE.send('ABORT');
+      // L'ESP32 joue le son faux départ côté hardware
+    } else {
+      playFBip();
+    }
+    setTimeout(resetTr, 2500);
+    return;
+  }
+  if (tSt !== 'BIP') return;
+  cancelAnimationFrame(rafId);
+  tLift = performance.now();
+  document.getElementById('rv').textContent =
+    ((tLift - tBip) / 1000).toFixed(3);
+  document.getElementById('rv').style.opacity = '.5';
+  tSt = 'RUN'; setSP('RUN', 'En course');
+  (function tick() {
+    if (tSt !== 'RUN') return;
+    document.getElementById('cv').textContent =
+      ((performance.now() - tLift) / 1000).toFixed(2);
+    rafId = requestAnimationFrame(tick);
+  })();
+}
+
+// ── Arrivée ────────────────────────────────────────────────
+async function doFinish() {
+  if (tSt !== 'RUN') return;
+  cancelAnimationFrame(rafId);
+  const tE = performance.now();
+  const react  = (tLift - tBip) / 1000;
+  const course = (tE - tLift) / 1000;
+  const dist   = parseInt(document.getElementById('sld').value);
+  const kmh    = ((dist / course) * 3.6).toFixed(1);
+  tSt = 'END';
+
+  if (BLE.connected) await BLE.send('FINISH');
+
+  document.getElementById('rr-react').textContent = react.toFixed(3) + 's';
+  document.getElementById('rr-time').textContent  = course.toFixed(2) + 's';
+  document.getElementById('rr-kmh').textContent   = kmh;
+  document.getElementById('rr-dist').textContent  = dist;
+  document.getElementById('trrun').style.display  = 'none';
+  document.getElementById('trres').style.display  = 'block';
+
+  const nm = 'Session ' + new Date().toLocaleDateString('fr-FR', {
+    day:'2-digit', month:'2-digit', year:'2-digit',
+    hour:'2-digit', minute:'2-digit'
+  });
+  await db.collection('history').add({
+    uid: CU.uid, name: nm,
+    react:   parseFloat(react.toFixed(3)),
+    time:    parseFloat(course.toFixed(2)),
+    distance: dist,
+    speed:   parseFloat(kmh),
+    mode:    BLE.connected ? 'physical' : 'simulation',
+    date:    firebase.firestore.FieldValue.serverTimestamp()
+  });
+  wLog('session', `Session: ${course.toFixed(2)}s react:${react.toFixed(3)}s`);
+}
+
+// ── Reset ──────────────────────────────────────────────────
+function resetTr() {
+  tSt = 'IDLE';
+  cancelAnimationFrame(rafId);
+  document.getElementById('trcfg').style.display  = 'block';
+  document.getElementById('trrun').style.display  = 'none';
+  document.getElementById('trres').style.display  = 'none';
+  document.getElementById('cv').textContent       = '0.00';
+  document.getElementById('rv').textContent       = '0.000';
+  document.getElementById('rv').style.opacity     = '1';
+  document.getElementById('falsemsg').style.display = 'none';
+}
+
+// ── Statut visuel ──────────────────────────────────────────
+function setSP(s, lbl) {
+  const el = document.getElementById('spill');
+  el.textContent = lbl;
+  el.className = 'sp';
+  const m = { WAIT:'sp-wait', ALEA:'sp-alea', BIP:'sp-bip',
+               RUN:'sp-run', FALSE:'sp-false' };
+  el.classList.add(m[s] || 'sp-idle');
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   AUDIO (simulation uniquement)
+═══════════════════════════════════════════════════════════ */
+let actx = null;
+function gac() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  return actx;
+}
+function playBip() {
+  const c = gac(), o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.frequency.value = 880;
+  g.gain.setValueAtTime(0.5, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.2);
+  o.start(); o.stop(c.currentTime + 0.2);
+}
+function playFBip() {
+  const c = gac(), o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.frequency.value = 200; o.type = 'square';
+  g.gain.setValueAtTime(0.3, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.5);
+  o.start(); o.stop(c.currentTime + 0.5);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   INIT — À appeler dans buildUI() après goPage(nav[0].id)
+   Ajoute : _injectBleBtn();
+═══════════════════════════════════════════════════════════ */
+// Dans ta fonction buildUI(role), ajoute cette ligne
+// après le if(role==='athlete') { ... } :
+//
+//   if (role === 'athlete') _injectBleBtn();
+     
 /* ═══════════════════════════════════════════
    AUDIO
 ═══════════════════════════════════════════ */
