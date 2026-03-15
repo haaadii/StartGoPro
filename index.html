@@ -630,6 +630,21 @@ input[type=range]{width:100%;accent-color:var(--blue);}
         <div class="ctitle">Configuration</div>
         <div class="sl-wrap"><div class="sl-row"><span>Concentration</span><span class="sl-val" id="sv-c">3 s</span></div><input type="range" id="slc" min="1" max="10" value="3" oninput="document.getElementById('sv-c').textContent=this.value+' s'"></div>
         <div class="sl-wrap"><div class="sl-row"><span>Distance</span><span class="sl-val" id="sv-d">10 m</span></div><input type="range" id="sld" min="5" max="500" value="10" oninput="document.getElementById('sv-d').textContent=this.value+' m'"></div>
+        <div class="sl-wrap" id="alea-wrap" style="display:none">
+          <div class="sl-row"><span>Délai aléatoire min</span><span class="sl-val" id="sv-amin">1 s</span></div>
+          <input type="range" id="sl-amin" min="1" max="8" value="1" oninput="document.getElementById('sv-amin').textContent=this.value+' s'">
+        </div>
+        <div class="sl-wrap" id="alea-wrap2" style="display:none">
+          <div class="sl-row"><span>Délai aléatoire max</span><span class="sl-val" id="sv-amax">3 s</span></div>
+          <input type="range" id="sl-amax" min="1" max="8" value="3" oninput="document.getElementById('sv-amax').textContent=this.value+' s'">
+        </div>
+        <div id="vol-wrap" style="display:none" class="sl-wrap">
+          <div class="sl-row">
+            <span>Volume ESP32</span>
+            <span class="sl-val" id="sv-vol">25</span>
+          </div>
+          <input type="range" id="sl-vol" min="0" max="30" value="25" oninput="onVolSlider(this.value)">
+        </div>
         <button class="btn-launch" onclick="startSeq()">
           <span class="btn-launch-icon"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21"/></svg></span>
           <span class="btn-launch-txt">Départ</span>
@@ -937,8 +952,10 @@ async function viewProf(uid){const s=await db.collection('users').doc(uid).get()
 
 /* ═══════════════════════════════════════════════════════════
    BLE LAYER — Web Bluetooth API
-   UUIDs identiques au fichier StartGo_ESP32.ino
-   Fallback automatique en mode simulation si BLE absent
+   Synchronisé avec StartGo_ESP32.ino (Nano ESP32 / ESP32-S3)
+   • START:<concMs>:<aleaMinMs>:<aleaMaxMs>
+   • VOL:<0-30>  /  PING  /  ABORT  /  LIFT  /  FINISH
+   • Reconnexion automatique x3
 ═══════════════════════════════════════════════════════════ */
 const BLE = {
   SERVICE: '4fafc201-1fb5-459e-8fcc-c5c9c331914b',
@@ -951,14 +968,14 @@ const BLE = {
   evtChar:   null,
   connected: false,
   _reconnectTimer: null,
+  _disconnectCount: 0,
 
-  /* ── Connexion ──────────────────────────────────────── */
+  /* ── Connexion utilisateur (ouvre le sélecteur BLE) ────── */
   async connect() {
     if (!navigator.bluetooth) {
-      toast('Web Bluetooth non supporté — utilise Chrome sur Android/desktop');
+      toast('Web Bluetooth non supporté — utilise Chrome sur Android ou PC');
       return false;
     }
-    // Annuler tout timer de reconnexion en cours
     if (BLE._reconnectTimer) { clearTimeout(BLE._reconnectTimer); BLE._reconnectTimer = null; }
     try {
       BLE.device = await navigator.bluetooth.requestDevice({
@@ -974,18 +991,22 @@ const BLE = {
     }
   },
 
-  /* ── Connexion GATT (réutilisée pour reconnexion) ───── */
+  /* ── Connexion GATT (réutilisée pour la reconnexion auto) ── */
   async _doConnect() {
     try {
       BLE.server  = await BLE.device.gatt.connect();
       const svc   = await BLE.server.getPrimaryService(BLE.SERVICE);
       BLE.cmdChar = await svc.getCharacteristic(BLE.CMD);
       BLE.evtChar = await svc.getCharacteristic(BLE.EVT);
+      // Éviter les doublons de listeners lors de reconnexion
+      BLE.evtChar.removeEventListener('characteristicvaluechanged', BLE._onEvent);
       await BLE.evtChar.startNotifications();
       BLE.evtChar.addEventListener('characteristicvaluechanged', BLE._onEvent);
       BLE.connected = true;
+      BLE._disconnectCount = 0;
       BLE._updateBtn();
-      toast('ESP32 connecté ✓ — Mode physique actif');
+      // Envoyer un PING pour synchroniser le volume dès connexion
+      await BLE.send('PING');
     } catch(e) {
       BLE.connected = false;
       BLE._updateBtn();
@@ -993,68 +1014,83 @@ const BLE = {
     }
   },
 
-  /* ── Déconnexion propre ─────────────────────────────── */
+  /* ── Déconnexion volontaire ─────────────────────────────── */
   disconnect() {
     if (BLE._reconnectTimer) { clearTimeout(BLE._reconnectTimer); BLE._reconnectTimer = null; }
+    BLE._disconnectCount = 99; // bloque la reconnexion auto
     BLE.device?.removeEventListener('gattserverdisconnected', BLE._onDisconnect);
     if (BLE.device?.gatt?.connected) BLE.device.gatt.disconnect();
     BLE.connected = false;
     BLE.cmdChar = BLE.evtChar = null;
     BLE._updateBtn();
+    _showBleControls(false);
     toast('ESP32 déconnecté');
   },
 
-  /* ── Gestion perte de connexion (auto-reconnect x3) ─── */
-  _disconnectCount: 0,
+  /* ── Perte de connexion inattendue — reconnexion auto x3 ── */
   _onDisconnect() {
     BLE.connected = false;
     BLE.cmdChar = BLE.evtChar = null;
     BLE._updateBtn();
     if (tSt !== 'IDLE') resetTr();
 
-    // Tentative reconnexion automatique (max 3 essais, délai exponentiel)
     if (BLE.device && BLE._disconnectCount < 3) {
       BLE._disconnectCount++;
-      const delay = BLE._disconnectCount * 1500;
-      toast(`ESP32 déconnecté — reconnexion dans ${delay/1000}s...`);
+      const ms = BLE._disconnectCount * 1500;
+      toast(`ESP32 déconnecté — reconnexion ${BLE._disconnectCount}/3 dans ${ms/1000}s`);
       BLE._reconnectTimer = setTimeout(async () => {
         if (!BLE.device) return;
         try {
           await BLE._doConnect();
-          if (BLE.connected) BLE._disconnectCount = 0;
         } catch(e) {
-          // Echec silencieux, retour mode simulation
           BLE._updateBtn();
         }
-      }, delay);
+      }, ms);
     } else {
       BLE._disconnectCount = 0;
-      toast('ESP32 déconnecté — retour mode simulation');
+      toast('ESP32 déconnecté — mode simulation');
     }
   },
 
-  /* ── Envoi commande vers ESP32 ──────────────────────── */
+  /* ── Envoi commande vers ESP32 (writeWithoutResponse = rapide) ── */
   async send(msg) {
     if (!BLE.connected || !BLE.cmdChar) return;
     try {
-      const enc = new TextEncoder().encode(msg);
-      await BLE.cmdChar.writeValueWithoutResponse(enc);
+      await BLE.cmdChar.writeValueWithoutResponse(new TextEncoder().encode(msg));
+      console.log('[BLE →]', msg);
     } catch(e) {
-      console.warn('[BLE send error]', e);
+      console.warn('[BLE send error]', e.message);
     }
   },
 
-  /* ── Réception événements depuis ESP32 ──────────────── */
+  /* ── Réception événements depuis ESP32 ──────────────────── */
   _onEvent(e) {
     const msg = new TextDecoder().decode(e.target.value).trim();
     console.log('[BLE ←]', msg);
 
-    if (msg === 'CONNECTED')  return; // déjà géré dans _doConnect
+    // CONNECTED:vol=N  — synchronise le volume au démarrage
+    if (msg.startsWith('CONNECTED')) {
+      const vm = msg.match(/vol=(\d+)/);
+      if (vm) _syncVol(parseInt(vm[1]));
+      toast('ESP32 connecté ✓ — Mode physique actif');
+      _showBleControls(true);
+      return;
+    }
+
+    // PONG:vol=N  — réponse au PING
+    if (msg.startsWith('PONG')) {
+      const vm = msg.match(/vol=(\d+)/);
+      if (vm) _syncVol(parseInt(vm[1]));
+      toast('ESP32 connecté ✓ — Mode physique actif');
+      _showBleControls(true);
+      return;
+    }
+
     if (msg === 'PHASE:WAIT') { setSP('WAIT', 'Concentration...'); return; }
     if (msg === 'PHASE:ALEA') { setSP('ALEA', 'Prêt...'); return; }
 
+    // BIP:<timestamp>  — L'ESP32 a joué le son, on démarre le chrono JS
     if (msg.startsWith('BIP:')) {
-      // L'ESP32 a joué le bip physique — on démarre le chrono JS ici
       tBip = performance.now();
       tSt  = 'BIP';
       setSP('BIP', 'Partez !');
@@ -1068,29 +1104,64 @@ const BLE = {
       return;
     }
 
-    if (msg === 'ABORTED')  { resetTr(); return; }
-    if (msg === 'ERR:BUSY') { toast('ESP32 occupé — attends la fin de la séquence'); return; }
-    if (msg === 'LIFT_ACK' || msg === 'FINISH_ACK') return; // acquittements futurs
+    // VOL_OK:N  — confirmation changement volume
+    if (msg.startsWith('VOL_OK:')) {
+      const v = parseInt(msg.split(':')[1]);
+      _syncVol(v);
+      return;
+    }
+
+    if (msg === 'ABORTED')          { resetTr(); toast('Séquence annulée'); return; }
+    if (msg === 'ERR:BUSY')         { toast('ESP32 occupé — attends la fin'); return; }
+    if (msg === 'LIFT_ACK' || msg === 'FINISH_ACK') return;
   },
 
-  /* ── Bouton connexion UI ─────────────────────────────── */
+  /* ── Mise à jour bouton UI ──────────────────────────────── */
   _updateBtn() {
     const btn = document.getElementById('ble-btn');
     const lbl = document.getElementById('ble-mode-lbl');
     if (!btn) return;
     if (BLE.connected) {
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg> ESP32 connecté`;
-      btn.style.cssText = 'background:var(--green-bg);color:var(--green);border-color:rgba(15,168,110,.3)';
+      btn.className = 'btn btn-ghost btn-sm';
+      btn.style.cssText = 'background:var(--green-bg);color:var(--green);border:1px solid rgba(15,168,110,.3)';
       btn.onclick = () => BLE.disconnect();
       if (lbl) { lbl.textContent = 'Mode physique (BLE)'; lbl.style.color = 'var(--green)'; }
     } else {
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg> Connecter ESP32`;
+      btn.className = 'btn btn-ghost btn-sm';
       btn.style.cssText = '';
       btn.onclick = () => BLE.connect();
       if (lbl) { lbl.textContent = 'Mode simulation'; lbl.style.color = 'var(--sub)'; }
     }
   }
 };
+
+/* Synchronise le slider volume avec la valeur reçue de l'ESP32 */
+function _syncVol(v) {
+  const sl = document.getElementById('sl-vol');
+  const lb = document.getElementById('sv-vol');
+  if (sl) sl.value = v;
+  if (lb) lb.textContent = v;
+}
+
+/* Affiche/masque les contrôles BLE-only (aléa min/max + volume) */
+function _showBleControls(show) {
+  ['alea-wrap','alea-wrap2','vol-wrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? 'block' : 'none';
+  });
+}
+
+/* Callback slider volume — envoie VOL:N à l'ESP32 en temps réel */
+let _volDebounce = null;
+function onVolSlider(val) {
+  document.getElementById('sv-vol').textContent = val;
+  clearTimeout(_volDebounce);
+  _volDebounce = setTimeout(() => BLE.send('VOL:' + val), 200);
+}
+
+
 
 /* ═══════════════════════════════════════════════════════════
    CHRONO — BLE physique + fallback simulation automatique
@@ -1103,12 +1174,19 @@ function _injectBleBtn() {
   if (!cfg || document.getElementById('ble-btn')) return;
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--g1);border:1px solid var(--gb);border-radius:var(--r-md);';
+  wrap.style.cssText = `
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:16px;padding:10px 14px;
+    background:var(--g1);border:1px solid var(--gb);
+    border-radius:var(--r-md);flex-wrap:wrap;
+  `;
 
   const btn = document.createElement('button');
   btn.id = 'ble-btn';
   btn.className = 'btn btn-ghost btn-sm';
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg> Connecter ESP32`;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13">
+    <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
+  </svg> Connecter ESP32`;
   btn.onclick = () => BLE.connect();
 
   const lbl = document.createElement('span');
@@ -1116,8 +1194,14 @@ function _injectBleBtn() {
   lbl.style.cssText = 'font-size:.72rem;color:var(--sub);font-weight:600;';
   lbl.textContent = 'Mode simulation';
 
+  // Indicateur de puissance signal (futur)
+  const dot = document.createElement('span');
+  dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:var(--sub);display:inline-block;margin-left:auto;flex-shrink:0;';
+  dot.id = 'ble-signal-dot';
+
   wrap.appendChild(btn);
   wrap.appendChild(lbl);
+  wrap.appendChild(dot);
   cfg.insertBefore(wrap, cfg.firstChild);
 }
 
@@ -1138,9 +1222,11 @@ async function startSeq() {
     /* ── MODE PHYSIQUE — ESP32 gère la séquence et les sons ── */
     tSt = 'WAIT';
     setSP('WAIT', 'Envoi vers ESP32...');
-    const conc = document.getElementById('slc').value;
-    await BLE.send('START:' + conc);
-    // La suite est déclenchée par BLE._onEvent → 'BIP:...'
+    const concMs  = parseInt(document.getElementById('slc').value) * 1000;
+    const aleaMin  = parseInt(document.getElementById('sl-amin')?.value || 1) * 1000;
+    const aleaMax  = parseInt(document.getElementById('sl-amax')?.value || 3) * 1000;
+    await BLE.send(`START:${concMs}:${aleaMin}:${aleaMax}`);
+    // La suite est déclenchée par BLE._onEvent → 'BIP:<timestamp>'
 
   } else {
     /* ── MODE SIMULATION — séquence JS + sons Web Audio ─── */
