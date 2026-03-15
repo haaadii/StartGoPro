@@ -1310,6 +1310,7 @@ async function doFinish() {
     date:     firebase.firestore.FieldValue.serverTimestamp()
   });
   wLog('session', `Session: react:${react.toFixed(3)}s course:${course.toFixed(2)}s`);
+  tSt = 'IDLE';  // prêt pour la prochaine session
 }
 
 function resetTr() {
