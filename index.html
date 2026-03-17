@@ -25,9 +25,12 @@
   --gshadow:0 8px 32px rgba(59,111,240,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
   --gshadow-sm:0 3px 14px rgba(26,31,54,0.10), 0 1px 0 rgba(255,255,255,0.8) inset;
 }
-html,body{font-family:var(--font);background:#e8edf7;color:#1a1f36;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;}
-#bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-#bg::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#dde6f5 0%,#e8edf7 45%,#d6e0f0 100%);transition:background 0.4s;}
+html,body{font-family:var(--font);background:#e8edf7;color:#1a1f36;min-height:100vh;overflow-x:hidden;transition:background .25s,color .25s;}
+body.dark{background:#000000 !important;color:#f2f2f2 !important;}
+body.dark #bg::before{background:#000000 !important;}
+body.dark #bg{background:#000000;}
+#bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;transition:background .25s;}
+#bg::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#dde6f5 0%,#e8edf7 45%,#d6e0f0 100%);transition:background 0.25s;}
 .orb{position:absolute;border-radius:50%;filter:blur(100px);animation:float ease-in-out infinite alternate;}
 .o1{width:700px;height:700px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(59,111,240,0.22) 0%,transparent 65%);animation-duration:22s;}
 .o2{width:600px;height:600px;top:30%;right:-150px;background:radial-gradient(circle,rgba(124,77,223,0.18) 0%,transparent 65%);animation-duration:28s;animation-delay:-8s;}
@@ -482,12 +485,12 @@ mark.hl{background:none;color:var(--blue);font-weight:900;}
         <div class="ctitle">Test Son ESP32</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
-            <div style="font-size:.86rem;font-weight:600;">Bip de départ</div>
+            <div style="font-size:.86rem;font-weight:600;">Son de test (0004)</div>
             <div style="font-size:.72rem;color:var(--sub);margin-top:2px;" id="test-bip-mode">Connecte l'ESP32 pour tester le son physique</div>
           </div>
           <button id="btn-test-bip" class="btn btn-ghost btn-sm" onclick="testBip()">
             <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5,3 19,12 5,21"/></svg>
-            Tester le bip
+            Tester le son
           </button>
         </div>
         <div id="test-bip-status" style="margin-top:8px;font-size:.75rem;color:var(--sub);min-height:16px;"></div>
@@ -904,7 +907,66 @@ let isDark=false;
 function applyDarkCookie(){const v=getCK('sg_dark');isDark=v===null?false:v==='1';applyDark(false);}
 function applyDark(save=true){
   const tgls=['tgld1','tgld2','tgld3'],root=document.documentElement,bg=document.getElementById('bg');
-  if(isDark){root.style.setProperty('--text','#f0f4ff');root.style.setProperty('--sub','rgba(240,244,255,0.55)');root.style.setProperty('--dim','rgba(240,244,255,0.30)');root.style.setProperty('--g0','rgba(255,255,255,0.04)');root.style.setProperty('--g1','rgba(255,255,255,0.08)');root.style.setProperty('--g2','rgba(255,255,255,0.13)');root.style.setProperty('--g3','rgba(255,255,255,0.20)');root.style.setProperty('--gb','rgba(255,255,255,0.16)');root.style.setProperty('--gb2','rgba(255,255,255,0.26)');root.style.setProperty('--gshine','rgba(255,255,255,0.45)');root.style.setProperty('--blur','blur(32px) saturate(160%)');root.style.setProperty('--blur2','blur(18px) saturate(140%)');root.style.setProperty('--gshadow','0 16px 48px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.14) inset');root.style.setProperty('--gshadow-sm','0 6px 24px rgba(0,0,0,0.40), 0 1px 0 rgba(255,255,255,0.10) inset');document.body.style.background='#0d1224';document.body.style.color='#f0f4ff';if(bg){bg.querySelectorAll('.orb').forEach((o,i)=>{const cols=['rgba(37,99,235,0.55)','rgba(79,32,160,0.50)','rgba(4,90,64,0.45)','rgba(120,20,20,0.35)'];o.style.background='radial-gradient(circle,'+cols[i%4]+' 0%,transparent 65%)';});}}else{root.style.setProperty('--text','#1a1f36');root.style.setProperty('--sub','rgba(26,31,54,0.52)');root.style.setProperty('--dim','rgba(26,31,54,0.32)');root.style.setProperty('--g0','rgba(255,255,255,0.45)');root.style.setProperty('--g1','rgba(255,255,255,0.62)');root.style.setProperty('--g2','rgba(255,255,255,0.78)');root.style.setProperty('--g3','rgba(255,255,255,0.92)');root.style.setProperty('--gb','rgba(26,31,54,0.10)');root.style.setProperty('--gb2','rgba(26,31,54,0.18)');root.style.setProperty('--gshine','rgba(255,255,255,0.95)');root.style.setProperty('--blur','blur(40px) saturate(200%)');root.style.setProperty('--blur2','blur(20px) saturate(160%)');root.style.setProperty('--gshadow','0 8px 32px rgba(59,111,240,0.12), 0 1px 0 rgba(255,255,255,0.9) inset');root.style.setProperty('--gshadow-sm','0 3px 14px rgba(26,31,54,0.10), 0 1px 0 rgba(255,255,255,0.8) inset');document.body.style.background='#e8edf7';document.body.style.color='#1a1f36';if(bg){bg.querySelectorAll('.orb').forEach((o,i)=>{const cols=['rgba(59,111,240,0.22)','rgba(124,77,223,0.18)','rgba(15,168,110,0.16)','rgba(59,111,240,0.14)'];o.style.background='radial-gradient(circle,'+cols[i%4]+' 0%,transparent 65%)';});}}
+  if(isDark){
+    // ── NOIR PUR ──────────────────────────────────────────────
+    root.style.setProperty('--text','#f2f2f2');
+    root.style.setProperty('--sub','rgba(242,242,242,0.50)');
+    root.style.setProperty('--dim','rgba(242,242,242,0.28)');
+    root.style.setProperty('--g0','rgba(255,255,255,0.02)');
+    root.style.setProperty('--g1','rgba(255,255,255,0.05)');
+    root.style.setProperty('--g2','rgba(255,255,255,0.09)');
+    root.style.setProperty('--g3','rgba(255,255,255,0.14)');
+    root.style.setProperty('--gb','rgba(255,255,255,0.10)');
+    root.style.setProperty('--gb2','rgba(255,255,255,0.18)');
+    root.style.setProperty('--gshine','rgba(255,255,255,0.18)');
+    root.style.setProperty('--blur','blur(24px) saturate(120%)');
+    root.style.setProperty('--blur2','blur(14px) saturate(110%)');
+    root.style.setProperty('--gshadow','0 20px 60px rgba(0,0,0,0.80), 0 1px 0 rgba(255,255,255,0.07) inset');
+    root.style.setProperty('--gshadow-sm','0 8px 28px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.05) inset');
+    // Fond noir absolu
+    document.body.style.background='#000000';
+    document.body.style.color='#f2f2f2';
+    document.body.classList.add('dark');
+    // Orbes très subtils sur fond noir
+    if(bg){
+      bg.style.opacity='1';
+      bg.querySelectorAll('.orb').forEach((o,i)=>{
+        const cols=['rgba(59,111,240,0.18)','rgba(124,77,223,0.14)','rgba(15,168,110,0.12)','rgba(59,111,240,0.10)'];
+        o.style.background='radial-gradient(circle,'+cols[i%4]+' 0%,transparent 65%)';
+        o.style.filter='blur(120px)';
+      });
+      // Fond du bg pur noir
+      const before=bg.querySelector('::before');
+      bg.style.setProperty('background','#000000');
+    }
+  } else {
+    // ── CLAIR ─────────────────────────────────────────────────
+    root.style.setProperty('--text','#1a1f36');
+    root.style.setProperty('--sub','rgba(26,31,54,0.52)');
+    root.style.setProperty('--dim','rgba(26,31,54,0.32)');
+    root.style.setProperty('--g0','rgba(255,255,255,0.45)');
+    root.style.setProperty('--g1','rgba(255,255,255,0.62)');
+    root.style.setProperty('--g2','rgba(255,255,255,0.78)');
+    root.style.setProperty('--g3','rgba(255,255,255,0.92)');
+    root.style.setProperty('--gb','rgba(26,31,54,0.10)');
+    root.style.setProperty('--gb2','rgba(26,31,54,0.18)');
+    root.style.setProperty('--gshine','rgba(255,255,255,0.95)');
+    root.style.setProperty('--blur','blur(40px) saturate(200%)');
+    root.style.setProperty('--blur2','blur(20px) saturate(160%)');
+    root.style.setProperty('--gshadow','0 8px 32px rgba(59,111,240,0.12), 0 1px 0 rgba(255,255,255,0.9) inset');
+    root.style.setProperty('--gshadow-sm','0 3px 14px rgba(26,31,54,0.10), 0 1px 0 rgba(255,255,255,0.8) inset');
+    document.body.style.background='#e8edf7';
+    document.body.style.color='#1a1f36';
+    document.body.classList.remove('dark');
+    if(bg){
+      bg.style.background='';
+      bg.querySelectorAll('.orb').forEach((o,i)=>{
+        const cols=['rgba(59,111,240,0.22)','rgba(124,77,223,0.18)','rgba(15,168,110,0.16)','rgba(59,111,240,0.14)'];
+        o.style.background='radial-gradient(circle,'+cols[i%4]+' 0%,transparent 65%)';
+        o.style.filter='blur(100px)';
+      });
+    }
+  }
   tgls.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('on',isDark);});
   if(save)setCK('sg_dark',isDark?'1':'0');
 }
