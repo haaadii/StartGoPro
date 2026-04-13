@@ -24,9 +24,9 @@
 // ─────────────────────────────────────────────────────────────
 //  Fichiers audio sur la carte SD  (/mp3/0001.mp3, etc.)
 // ─────────────────────────────────────────────────────────────
-#define SON_DEMARRAGE   D   // joué au démarrage de l'ESP32
-#define SON_CONNEXION   B   // joué quand le téléphone se connecte
-#define SON_BIP_COURSE  S   // le bip de départ
+#define SON_DEMARRAGE   1   // joué au démarrage de l'ESP32
+#define SON_CONNEXION   2   // joué quand le téléphone se connecte
+#define SON_BIP_COURSE  3   // le bip de départ
 #define SON_TEST        4   // test depuis les paramètres de l'app
 
 // ─────────────────────────────────────────────────────────────
