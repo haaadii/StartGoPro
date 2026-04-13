@@ -639,6 +639,7 @@ const BLE = {
   EVT:     '1c95d5e3-d8f7-413a-bf3d-7a2e5d7be87e',
   device: null, cmd: null, evt: null,
   on: false, vol: 25,
+  bat: { pct: -1, etat: '?', tension: 0 },
   _enCours: false,
 
   // Demande au navigateur de scanner les appareils Bluetooth proches
@@ -715,6 +716,8 @@ const BLE = {
     if (msg.startsWith('CONNECTED')) {
       const m = msg.match(/vol=(\d+)/);
       if (m) { BLE.vol = parseInt(m[1]); BLE._syncVol(); }
+      // Demande les infos batterie dès la connexion
+      setTimeout(() => BLE.send('BAT_INFO'), 500);
       return;
     }
 
@@ -754,6 +757,12 @@ const BLE = {
       return;
     }
     if (msg === 'ERR:BUSY') { toast('ESP32 occupé — attends la fin de la séquence'); return; }
+    if (msg.startsWith('BAT:')) {
+      const p = msg.split(':');
+      BLE.bat = { pct: parseInt(p[1]), etat: p[2] || '?', tension: parseFloat(p[3]) || 0 };
+      BLE._syncBat();
+      return;
+    }
     if (msg.startsWith('VOL_OK:')) {
       BLE.vol = parseInt(msg.split(':')[1]) || BLE.vol;
       BLE._syncVol();
@@ -777,6 +786,32 @@ const BLE = {
     if (lb) lb.textContent = BLE.vol;
   },
 
+  // Met à jour l'affichage batterie dans la page Entraînement
+  _syncBat() {
+    const el = document.getElementById('ble-bat');
+    if (!el) return;
+    const { pct, etat, tension } = BLE.bat;
+    let icone, label, couleur;
+
+    if (etat === 'secteur') {
+      icone   = '⚡';
+      label   = pct >= 0 ? 'Secteur · ' + pct + '%' : 'Secteur (pas de batterie)';
+      couleur = 'var(--blue)';
+    } else if (etat === 'charge') {
+      icone   = '🔋';
+      label   = 'En charge · ' + pct + '%  · ' + tension.toFixed(2) + 'V';
+      couleur = 'var(--green)';
+    } else if (etat === 'batterie') {
+      icone   = '🔋';
+      label   = pct + '% · ' + tension.toFixed(2) + 'V';
+      couleur = pct < 20 ? 'var(--red)' : pct < 40 ? 'var(--amber)' : 'var(--green)';
+    } else {
+      icone   = '⏳'; label = 'Lecture...'; couleur = 'var(--sub)';
+    }
+
+    el.innerHTML = icone + ' <span style="color:' + couleur + ';font-weight:700;">' + label + '</span>';
+  },
+
   _ui() {
     const btn = document.getElementById('ble-btn');
     const lbl = document.getElementById('ble-lbl');
@@ -797,6 +832,8 @@ const BLE = {
       lbl.style.color = BLE.on ? 'var(--green)' : 'var(--sub)';
     }
     if (vs) vs.style.display = BLE.on ? 'block' : 'none';
+    const bat = document.getElementById('ble-bat');
+    if (bat) bat.style.display = BLE.on ? 'block' : 'none';
     if (tm) tm.textContent = BLE.on
       ? 'ESP32 connecté — son 0004.mp3 au volume réglé'
       : 'Connecte l\'ESP32 pour tester le son physique';
@@ -822,6 +859,12 @@ function _injectBleBtn() {
   vw.id = 'sg-vol-wrap'; vw.style.cssText = 'display:none;margin-bottom:14px;';
   vw.innerHTML = '<div class="sl-wrap"><div class="sl-row"><span>Volume ESP32</span><span class="sl-val" id="sg-vol-lb">'+BLE.vol+'</span></div><input type="range" id="sg-vol-sl" min="0" max="30" value="'+BLE.vol+'" oninput="document.getElementById(\'sg-vol-lb\').textContent=this.value" onchange="BLE.setVol(parseInt(this.value))"></div>';
   cfg.insertBefore(vw, row.nextSibling);
+  // Bloc batterie (caché tant que l'ESP32 n'est pas connecté)
+  const batDiv = document.createElement('div');
+  batDiv.id = 'ble-bat';
+  batDiv.style.cssText = 'display:none;font-size:.75rem;padding:7px 12px;background:var(--g1);border:1px solid var(--gb);border-radius:var(--r-md);margin-bottom:14px;';
+  batDiv.textContent = '⏳ Lecture batterie...';
+  cfg.insertBefore(batDiv, vw.nextSibling);
 }
 
 /* ── Test bip ── */
